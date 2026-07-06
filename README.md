@@ -1,0 +1,133 @@
+# Adaptive PINN Thermal Digital Twin
+
+This project compares a standard offline physics-informed neural network (PINN)
+with an adaptive PINN for a simplified rocket-engine throat-wall thermal
+monitoring problem.
+
+The physical model is 1D transient heat conduction through the wall thickness:
+
+```text
+rho * cp * dT/dt = k * d2T/dx2
+```
+
+Boundary conditions:
+
+```text
+x = 0:      -k dT/dx = q_hot(t)
+x = Lwall: -k dT/dx = h_cool * (T - T_cool)
+T(x, 0) = T0
+```
+
+The rocket-engine relevance comes from the hot-gas wall heat flux and
+regenerative coolant-side convection. The implementation intentionally avoids
+combustion modeling, CFD, and full nozzle geometry.
+
+## Setup
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+If you do not want an editable install, run commands with:
+
+```bash
+PYTHONPATH=src python scripts/run_experiment.py --mode smoke
+```
+
+## Run
+
+Quick verification:
+
+```bash
+PYTHONPATH=src python scripts/run_experiment.py --mode smoke --output-dir outputs/smoke
+```
+
+Longer report-quality run:
+
+```bash
+PYTHONPATH=src python scripts/run_experiment.py --mode full --output-dir outputs/full
+```
+
+Additional visual-explainer graphs can be regenerated from saved model outputs:
+
+```bash
+PYTHONPATH=src python scripts/make_visual_graphs.py --mode smoke --output-dir outputs/smoke
+```
+
+On Apple Silicon or a CUDA machine you can try:
+
+```bash
+PYTHONPATH=src python scripts/run_experiment.py --mode smoke --device mps
+PYTHONPATH=src python scripts/run_experiment.py --mode smoke --device cuda
+```
+
+## Outputs
+
+The experiment writes:
+
+- `outputs/.../results/config.json`
+- `outputs/.../results/metrics.json`
+- `outputs/.../results/baseline_history.csv`
+- `outputs/.../results/adaptive_history.csv`
+- `outputs/.../results/noise_summary.csv`
+- `outputs/.../figures/reference_temperature_field.png`
+- `outputs/.../figures/baseline_profiles.png`
+- `outputs/.../figures/adaptive_profiles.png`
+- `outputs/.../figures/relative_l2_error_over_time.png`
+- `outputs/.../figures/loss_curves.png`
+- `outputs/.../figures/sensor_noise_comparison.png`
+
+## Method Summary
+
+The finite-difference reference solution uses a Crank-Nicolson discretization.
+The PINN is trained in nondimensional variables:
+
+```text
+x_hat = x / L_wall
+t_hat = t / t_final
+theta = (T - T_cool) / delta_T
+```
+
+The loss combines:
+
+```text
+PDE residual + hot boundary + coolant boundary + initial condition
+```
+
+The adaptive model starts from the offline baseline weights. Sparse synthetic
+sensors are revealed in streaming time windows, and the model is periodically
+fine-tuned with an added sensor-data loss.
+
+## Tests
+
+```bash
+PYTHONPATH=src pytest -q
+```
+
+The tests check the finite-difference solver, PINN residual, sensor sampler,
+and metric evaluation.
+
+## Optional DeepXDE Implementation
+
+The main implementation is plain PyTorch so that every loss term is explicit and
+easy to explain in the report. A DeepXDE version is also provided for comparison.
+It uses DeepXDE's `TimePDE`, general operator boundary conditions for the two
+flux boundaries, and point-set constraints for streaming sensor measurements.
+
+Install the optional dependency:
+
+```bash
+pip install -e ".[deepxde]"
+```
+
+Run the DeepXDE smoke experiment:
+
+```bash
+PYTHONPATH=src DDE_BACKEND=pytorch python scripts/run_deepxde_experiment.py --mode smoke
+```
+
+This path is useful as a compact library-based reimplementation, while the
+plain PyTorch path remains the recommended source of final report figures.

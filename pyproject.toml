@@ -17,7 +17,6 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest>=8.0"]
-deepxde = ["deepxde>=1.15.0"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

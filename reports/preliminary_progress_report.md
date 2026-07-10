@@ -30,7 +30,7 @@ The controlled modification is an adaptive PINN. It starts from the offline PINN
 loss = PDE + boundary + initial condition + sensor data
 ```
 
-Thermocouples are treated as sparse observation constraints, not moving physical boundaries. The optional DeepXDE implementation in the repository reproduces the same PDE setup using library-provided `TimePDE`, `OperatorBC`, and `PointSetBC` objects.
+Thermocouples are treated as sparse observation constraints, not moving physical boundaries. The implementation is kept in plain PyTorch so the PDE residual, boundary losses, sensor loss, and adaptive update rule remain explicit and easy to inspect.
 
 ## 3. Software Pipeline and Preliminary Results
 

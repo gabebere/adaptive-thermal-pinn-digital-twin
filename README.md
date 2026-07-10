@@ -118,25 +118,3 @@ PYTHONPATH=src pytest -q
 
 The tests check the finite-difference solver, PINN residual, sensor sampler,
 and metric evaluation.
-
-## Optional DeepXDE Implementation
-
-The main implementation is plain PyTorch so that every loss term is explicit and
-easy to explain in the report. A DeepXDE version is also provided for comparison.
-It uses DeepXDE's `TimePDE`, general operator boundary conditions for the two
-flux boundaries, and point-set constraints for streaming sensor measurements.
-
-Install the optional dependency:
-
-```bash
-pip install -e ".[deepxde]"
-```
-
-Run the DeepXDE smoke experiment:
-
-```bash
-PYTHONPATH=src DDE_BACKEND=pytorch python scripts/run_deepxde_experiment.py --mode smoke
-```
-
-This path is useful as a compact library-based reimplementation, while the
-plain PyTorch path remains the recommended source of final report figures.

@@ -51,6 +51,15 @@ Longer report-quality run:
 PYTHONPATH=src python scripts/run_experiment.py --mode full --output-dir outputs/full
 ```
 
+Preliminary progress-report study with three random seeds:
+
+```bash
+PYTHONPATH=src python scripts/run_progress_study.py --output-dir outputs/progress
+```
+
+This writes `outputs/progress/progress_metric_summary.csv` and a draft report
+at `reports/preliminary_progress_report.md`.
+
 Additional visual-explainer graphs can be regenerated from saved model outputs:
 
 ```bash

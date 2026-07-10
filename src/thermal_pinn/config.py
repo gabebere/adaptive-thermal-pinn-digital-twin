@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -38,6 +38,7 @@ class ExperimentConfig:
     hidden_units: int = 48
     activation: str = "tanh"
     learning_rate: float = 2.0e-3
+    adaptive_learning_rate: float = 5.0e-4
     baseline_epochs: int = 1200
     update_epochs: int = 160
     n_pde: int = 1536
@@ -48,7 +49,7 @@ class ExperimentConfig:
     w_pde: float = 1.0
     w_bc: float = 2.0
     w_ic: float = 5.0
-    w_sensor: float = 20.0
+    w_sensor: float = 10.0
 
     # Adaptive sensor setup.
     sensor_x_hat: tuple[float, ...] = (0.0, 0.25, 0.5, 0.75)
@@ -101,6 +102,22 @@ def make_config(mode: str = "smoke", output_dir: str | Path | None = None) -> Ex
         cfg.n_ic = 96
         cfg.sensor_windows = 3
         cfg.sensor_stride = 8
+        cfg.w_sensor = 10.0
+        cfg.noise_levels = (0.0, 0.01, 0.05)
+    elif mode == "progress":
+        cfg.nx = 61
+        cfg.nt = 181
+        cfg.hidden_layers = 2
+        cfg.hidden_units = 40
+        cfg.baseline_epochs = 350
+        cfg.update_epochs = 90
+        cfg.n_pde = 640
+        cfg.n_bc = 128
+        cfg.n_ic = 128
+        cfg.sensor_windows = 4
+        cfg.sensor_stride = 7
+        cfg.w_sensor = 8.0
+        cfg.noise_levels = (0.01,)
     elif mode == "full":
         pass
     else:

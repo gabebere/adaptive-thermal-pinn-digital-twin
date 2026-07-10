@@ -79,8 +79,9 @@ def _train(
     epochs: int,
     sensor_batches: list[SensorBatch] | None = None,
     phase: str = "baseline",
+    learning_rate: float | None = None,
 ) -> TrainResult:
-    optimizer = torch.optim.Adam(model.parameters(), lr=cfg.learning_rate)
+    optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate or cfg.learning_rate)
     history: list[dict[str, float]] = []
     start = time.perf_counter()
 
@@ -103,7 +104,7 @@ def train_baseline_pinn(cfg: ExperimentConfig) -> TrainResult:
     torch.manual_seed(cfg.seed)
     np.random.seed(cfg.seed)
     model = pinn_model(cfg)
-    return _train(model, cfg, cfg.baseline_epochs, phase="baseline")
+    return _train(model, cfg, cfg.baseline_epochs, phase="baseline", learning_rate=cfg.learning_rate)
 
 
 def update_adaptive_pinn(
@@ -126,6 +127,7 @@ def update_adaptive_pinn(
             cfg.update_epochs,
             sensor_batches=seen_batches,
             phase=f"adaptive_window_{batch.window_index}",
+            learning_rate=cfg.adaptive_learning_rate,
         )
         total_runtime += result.runtime_s
         for row in result.history:

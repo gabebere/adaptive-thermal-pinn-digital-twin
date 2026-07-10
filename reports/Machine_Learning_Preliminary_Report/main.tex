@@ -187,11 +187,14 @@ Figure~\ref{fig:error} gives a more detailed visual comparison for one represent
     \label{fig:error}
 \end{figure}
 
+Overall, these preliminary results are promising because the adaptive model improves the temperature reconstruction while using only sparse thermocouple-like observations. However, the main difficulty for the final project will not only be improving accuracy. The harder challenge is the real-time learning tradeoff: the model must update quickly enough to be useful during operation, but the updates must remain stable enough that the PINN does not drift away from the governing physics or become unreliable after new sensor data arrives. In other words, a practical thermal guardrail would require a model that can continue learning from new measurements without breaking the physical consistency of the prediction.
+
 \section{Remaining Work}
 The current code already reaches the course milestone of a runnable baseline and one controlled modification. The next two weeks will focus on making the final comparison more rigorous:
 \begin{enumerate}
     \item run the full experiment with more epochs and a finer grid for final-quality figures;
     \item test sensitivity to sensor noise, sensor placement, and sensor-loss weight;
+    \item quantify the runtime--accuracy tradeoff for adaptive updates;
     \item report cases where adaptive updates help globally but may locally hurt unobserved regions;
     \item convert this preliminary report into the final AIAA manuscript format with a concise results and limitations discussion.
 \end{enumerate}

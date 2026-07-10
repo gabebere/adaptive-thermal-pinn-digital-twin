@@ -7,6 +7,9 @@
 \usepackage{siunitx}
 \usepackage{booktabs}
 \usepackage{longtable,tabularx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning}
+\hypersetup{hidelinks}
 \setlength\LTleft{0pt}
 
 \title{Preliminary Progress Report: Adaptive Physics-Informed Thermal Monitoring of a Rocket Throat Wall}
@@ -127,6 +130,53 @@ The baseline training objective is
 \end{equation}
 This is the standard PINN baseline: the network is trained to satisfy physics and constraints, not to directly copy the finite-difference solution.
 
+The network architecture used for the preliminary progress study is shown in Fig.~\ref{fig:architecture}. The model has two scalar inputs, two hidden layers with 40 neurons in each layer, hyperbolic tangent activation functions, and one scalar output. The same architecture is used for both the offline baseline and adaptive model; the only difference is that the adaptive model is later fine-tuned with sensor data.
+
+\begin{figure}[h!]
+\centering
+\begin{tikzpicture}[
+    node distance=1.35cm and 1.55cm,
+    neuron/.style={circle, draw, minimum size=7mm, inner sep=0pt},
+    layerlabel/.style={align=center, font=\small},
+    arrow/.style={-{Latex[length=2mm]}, thick},
+    lossbox/.style={draw, rounded corners, align=center, font=\small, inner sep=5pt}
+]
+    \node[neuron] (x) {$\hat{x}$};
+    \node[neuron, below=0.45cm of x] (t) {$\hat{t}$};
+
+    \node[neuron, right=1.9cm of x, yshift=0.55cm] (h11) {};
+    \node[neuron, below=0.35cm of h11] (h12) {};
+    \node[below=0.15cm of h12] (dots1) {$\vdots$};
+    \node[neuron, below=0.15cm of dots1] (h13) {};
+
+    \node[neuron, right=1.9cm of h11] (h21) {};
+    \node[neuron, below=0.35cm of h21] (h22) {};
+    \node[below=0.15cm of h22] (dots2) {$\vdots$};
+    \node[neuron, below=0.15cm of dots2] (h23) {};
+
+    \node[neuron, right=1.9cm of h22] (out) {$\theta$};
+
+    \foreach \input in {x,t}
+      \foreach \hidden in {h11,h12,h13}
+        \draw[arrow] (\input) -- (\hidden);
+    \foreach \hiddena in {h11,h12,h13}
+      \foreach \hiddenb in {h21,h22,h23}
+        \draw[arrow] (\hiddena) -- (\hiddenb);
+    \foreach \hidden in {h21,h22,h23}
+        \draw[arrow] (\hidden) -- (out);
+
+    \node[layerlabel, above=0.35cm of x] {Inputs\\2 values};
+    \node[layerlabel, above=0.35cm of h11] {Hidden layer 1\\40 tanh neurons};
+    \node[layerlabel, above=0.35cm of h21] {Hidden layer 2\\40 tanh neurons};
+    \node[layerlabel, above=0.35cm of out] {Output\\temperature rise};
+
+    \node[lossbox, below=1.45cm of h13, xshift=2.25cm] (losses) {Training losses\\PDE residual + boundary + initial condition\\Adaptive update adds sensor-data loss};
+    \draw[arrow] (out) |- (losses.east);
+\end{tikzpicture}
+\caption{PINN architecture used in the progress-study configuration. The baseline and adaptive models use the same network. Adaptive learning changes the training data/loss after baseline training, not the architecture.}
+\label{fig:architecture}
+\end{figure}
+
 \section{Adaptive Sensor Assimilation}
 The controlled modification is adaptive fine-tuning with streaming sensor data. The sensor locations are fixed inside the wall, but the sensor data arrives in time windows. Figure~\ref{fig:sensors} shows the sampled points over the reference temperature field.
 
@@ -177,6 +227,15 @@ Hot-side maximum error [K] & $27.53 \pm 0.19$ & $16.56 \pm 0.49$ \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Figure~\ref{fig:fields} compares the full temperature fields from the numerical reference, the offline PINN, and the adaptive PINN for a representative seed. This figure is useful for interpreting the result visually: the adaptive model more closely follows the high-temperature region near the hot side while preserving the overall transient diffusion pattern through the wall.
+
+\begin{figure}[h!]
+    \centering
+    \includegraphics[width=0.98\linewidth]{figures/temperature_field_comparison.png}
+    \caption{Side-by-side temperature-field comparison for one representative seed. The Crank--Nicolson solution is the synthetic reference, the offline PINN is the baseline, and the adaptive PINN is the proposed sensor-assimilating model.}
+    \label{fig:fields}
+\end{figure}
 
 Figure~\ref{fig:error} gives a more detailed visual comparison for one representative seed. The right panel shows the change in absolute error. Positive regions indicate where the adaptive model reduced the error compared with the offline baseline.
 

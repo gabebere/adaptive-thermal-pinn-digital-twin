@@ -6,10 +6,11 @@ import argparse
 import json
 import textwrap
 from pathlib import Path
+from types import SimpleNamespace
 
 import matplotlib.pyplot as plt
 import numpy as np
-from matplotlib.colors import TwoSlopeNorm
+from matplotlib.colors import PowerNorm, TwoSlopeNorm
 
 from parameters import LATENCY_EXPERIMENTS, config_for_latency_experiment, make_config
 from pinn_workflow import adapt_online, predict, rmse, train_baseline
@@ -42,20 +43,31 @@ def _caption(fig, text):
     )
 
 
-def plot_streaming_sensors(cfg, data, output_dir: Path):
-    reference_slice = _slice_matrix(
-        data.field_points, data.field_values, data.times, data.x
-    )
+def plot_streaming_sensors(cfg, data, output_dir: Path, reference_slice=None):
+    if reference_slice is None:
+        reference_slice = _slice_matrix(
+            data.field_points, data.field_values, data.times, data.x
+        )
+    displayed_reference = np.clip(reference_slice, 0.0, None)
     fig, ax = plt.subplots(figsize=(10.5, 6.2))
     fig.subplots_adjust(left=0.09, right=0.91, bottom=0.24, top=0.90)
     image = ax.pcolormesh(
         data.x,
         data.times,
-        reference_slice,
+        displayed_reference,
         shading="auto",
         cmap="magma",
+        norm=PowerNorm(
+            gamma=0.30,
+            vmin=0.0,
+            vmax=float(np.max(displayed_reference)),
+        ),
     )
-    fig.colorbar(image, ax=ax, label="Numerical reference θ at Y=0.5")
+    fig.colorbar(
+        image,
+        ax=ax,
+        label="Numerical reference θ at Y=0.5 (power-scaled colors)",
+    )
 
     center_mask = np.isclose(data.sensor_points[:, 1], 0.5)
     center_points = data.sensor_points[center_mask]
@@ -96,13 +108,19 @@ def plot_streaming_sensors(cfg, data, output_dir: Path):
         xlim=(0.0, 1.0),
         ylim=(0.0, cfg.tau_final),
     )
+    ax.set_yscale("symlog", linthresh=1.0, linscale=1.0)
+    informative_ticks = np.asarray((0.0, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0))
+    informative_ticks = informative_ticks[informative_ticks <= cfg.tau_final]
+    ax.set_yticks(informative_ticks)
+    ax.set_yticklabels([f"{value:g}" for value in informative_ticks])
     ax.legend(ncol=2, fontsize=8, loc="upper right")
     _caption(
         fig,
         "Fig. 8. Sparse boundary-aware observations used by the combined low-latency "
         "adaptive PINN. Colors group the run into four display segments; they are not "
         "training batches. The model updates after every time instance (n=1) and retains "
-        "only the four most recent time instances in its data-loss window.",
+        "only the four most recent time instances in its data-loss window. The symlog time "
+        "axis and power-scaled colors reveal the early transient and lower-amplitude field.",
     )
     path = output_dir / "08_combined_streaming_sensors.png"
     fig.savefig(path, dpi=200)
@@ -207,6 +225,11 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--profile", choices=("smoke", "full"), default="full")
     parser.add_argument("--output-dir", type=Path)
+    parser.add_argument(
+        "--replot-existing",
+        action="store_true",
+        help="regenerate the sensor figure from the saved figure-data NPZ",
+    )
     args = parser.parse_args()
 
     base = make_config(args.profile)
@@ -232,6 +255,23 @@ def main():
     cfg.validate()
     output_dir = args.output_dir or base.output_dir / "combined_latency"
     output_dir.mkdir(parents=True, exist_ok=True)
+
+    if args.replot_existing:
+        stored = np.load(output_dir / "combined_latency_figure_data.npz")
+        saved_data = SimpleNamespace(
+            x=stored["x"],
+            times=stored["times"],
+            switch_tau=float(stored["switch_tau"]),
+            sensor_points=stored["sensor_points"],
+        )
+        plot_streaming_sensors(
+            cfg,
+            saved_data,
+            output_dir,
+            reference_slice=stored["reference_slice"],
+        )
+        print(f"Rescaled figure: {(output_dir / '08_combined_streaming_sensors.png').resolve()}")
+        return
 
     print("[1/3] Training the shared offline PINN...")
     reference = generate_reference_dataset(base, output_dir)

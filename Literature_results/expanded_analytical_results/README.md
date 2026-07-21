@@ -15,6 +15,8 @@ the eight published study times used by the literature reproduction.
 - `06_boundary_change_reference.npz` contains the numerical reference for the
   combined boundary-condition experiment, with boundary set 1 followed by
   boundary set 2.
+- `06_boundary_change_reference.csv` contains the same full-field reference in
+  readable columns: `x`, `y`, `tau`, `temperature`, and `is_post_switch`.
 - `06_boundary_change_response.png` visualizes that reference alongside the
   adaptive-model response.
 

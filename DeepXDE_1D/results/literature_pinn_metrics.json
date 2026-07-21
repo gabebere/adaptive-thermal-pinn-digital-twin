@@ -1,0 +1,58 @@
+{
+  "paper": "Hsu, Tu & Chang, Axioms 12 (2023), 416",
+  "case": "table_1",
+  "literature_column": "published_terms_20",
+  "literature_points": 8,
+  "literature_vs_pinn_rmse": 0.017747054266817556,
+  "assimilation_vs_pinn_rmse": 0.010962959013753597,
+  "update_history": [
+    {
+      "update": 1,
+      "tau_end": 0.123076923076923,
+      "before_rmse": 0.043812976251249046,
+      "after_rmse": 0.018942436486898095
+    },
+    {
+      "update": 2,
+      "tau_end": 0.276923076923077,
+      "before_rmse": 0.04026634344691645,
+      "after_rmse": 0.014061978320559831
+    },
+    {
+      "update": 3,
+      "tau_end": 0.430769230769231,
+      "before_rmse": 0.02160379813547706,
+      "after_rmse": 0.011854308392630174
+    },
+    {
+      "update": 4,
+      "tau_end": 0.584615384615385,
+      "before_rmse": 0.005017061550065699,
+      "after_rmse": 0.004836877604229612
+    },
+    {
+      "update": 5,
+      "tau_end": 0.738461538461538,
+      "before_rmse": 0.00129769668640344,
+      "after_rmse": 0.002569819971078191
+    },
+    {
+      "update": 6,
+      "tau_end": 0.892307692307692,
+      "before_rmse": 0.003676117159608415,
+      "after_rmse": 0.002474020532007243
+    },
+    {
+      "update": 7,
+      "tau_end": 1.04615384615385,
+      "before_rmse": 0.0067485691825472024,
+      "after_rmse": 0.005354062043729524
+    },
+    {
+      "update": 8,
+      "tau_end": 1.2,
+      "before_rmse": 0.01272555718701791,
+      "after_rmse": 0.00755193187405728
+    }
+  ]
+}

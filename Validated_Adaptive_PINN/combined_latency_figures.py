@@ -108,19 +108,14 @@ def plot_streaming_sensors(cfg, data, output_dir: Path, reference_slice=None):
         xlim=(0.0, 1.0),
         ylim=(0.0, cfg.tau_final),
     )
-    ax.set_yscale("symlog", linthresh=1.0, linscale=1.0)
-    informative_ticks = np.asarray((0.0, 0.25, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0, 50.0, 100.0))
-    informative_ticks = informative_ticks[informative_ticks <= cfg.tau_final]
-    ax.set_yticks(informative_ticks)
-    ax.set_yticklabels([f"{value:g}" for value in informative_ticks])
     ax.legend(ncol=2, fontsize=8, loc="upper right")
     _caption(
         fig,
         "Fig. 8. Sparse boundary-aware observations used by the combined low-latency "
         "adaptive PINN. Colors group the run into four display segments; they are not "
         "training batches. The model updates after every time instance (n=1) and retains "
-        "only the four most recent time instances in its data-loss window. The symlog time "
-        "axis and power-scaled colors reveal the early transient and lower-amplitude field.",
+        "only the four most recent time instances in its data-loss window. Power-scaled "
+        "colors reveal lower-amplitude thermal structure while time remains linear.",
     )
     path = output_dir / "08_combined_streaming_sensors.png"
     fig.savefig(path, dpi=200)

@@ -12,7 +12,7 @@ This folder contains the DeepXDE implementation and its dependencies.
 The script reads the reference CSV files without modifying them from:
 
 ```text
-C:\Users\jblec\Technion\Spring_2026\Machine Learning\Project\Paper-result\mdpi_416_tables
+C:\Users\jblec\Technion\Spring_2026\Machine Learning\Project\Literature_result\mdpi_416_tables
 ```
 
 - `table_N_40_times.csv`: 40 center-point values used for sequential adaptation.
@@ -40,8 +40,11 @@ After training, the following files are written under the `results/` folder
 beside `online_heat_pinn.py`, regardless of the terminal working directory:
 
 - `literature_vs_pinn.csv`
+- `baseline_vs_adaptive_center.csv`
 - `literature_pinn_metrics.json`
 - `paper_reference_comparison.png`
+- `streaming_sensor_windows.png`
+- `baseline_adaptive_error_comparison.png`
 
 The JSON file records
 

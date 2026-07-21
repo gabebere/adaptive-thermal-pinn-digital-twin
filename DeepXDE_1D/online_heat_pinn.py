@@ -22,7 +22,7 @@ import numpy as np
 
 
 DEFAULT_REFERENCE_DIR = Path(
-    r"C:\Users\jblec\Technion\Spring_2026\Machine Learning\Project\Paper-result\mdpi_416_tables"
+    r"C:\Users\jblec\Technion\Spring_2026\Machine Learning\Project\Literature_result\mdpi_416_tables"
 )
 
 # Paper cases: eta_i(tau) = exp(-d_i tau).
@@ -178,6 +178,7 @@ def train_adaptively(cfg: Config, assimilation_points, assimilation_values):
         iterations=cfg.baseline_iterations,
         display_every=max(1, cfg.baseline_iterations // 5),
     )
+    baseline_prediction = model.predict(assimilation_points)
 
     history = []
     batches = np.array_split(
@@ -214,7 +215,7 @@ def train_adaptively(cfg: Config, assimilation_points, assimilation_values):
             f"update {update:02d}, tau={new_points[-1, 2]:.4f}: "
             f"RMSE {before_rmse:.6g} -> {after_rmse:.6g}"
         )
-    return model, history
+    return model, history, baseline_prediction
 
 
 def save_results(
@@ -223,6 +224,7 @@ def save_results(
     history,
     assimilation_points,
     assimilation_values,
+    baseline_prediction,
     literature_points,
     literature_values,
     output_dir: Path,
@@ -232,6 +234,20 @@ def save_results(
     literature_prediction = model.predict(literature_points)
     literature_rmse = rmse(literature_values, literature_prediction)
 
+    np.savetxt(
+        output_dir / "baseline_vs_adaptive_center.csv",
+        np.column_stack(
+            (
+                assimilation_points[:, 2],
+                assimilation_values[:, 0],
+                baseline_prediction[:, 0],
+                assimilation_prediction[:, 0],
+            )
+        ),
+        delimiter=",",
+        header="tau,reference_theta,baseline_pinn_theta,adaptive_pinn_theta",
+        comments="",
+    )
     np.savetxt(
         output_dir / "literature_vs_pinn.csv",
         np.column_stack(
@@ -287,6 +303,69 @@ def save_results(
     fig.tight_layout()
     fig.savefig(output_dir / "paper_reference_comparison.png", dpi=180)
     plt.close(fig)
+
+    # Figure analogous to the streaming-sensor map. The background is the
+    # adaptive PINN slice at Y=0.5; reference observations exist only at X=0.5.
+    x_grid = np.linspace(0.0, 1.0, 161)
+    tau_grid = np.linspace(0.0, 1.2, 161)
+    xx, tt = np.meshgrid(x_grid, tau_grid)
+    slice_points = np.column_stack(
+        (xx.ravel(), np.full(xx.size, 0.5), tt.ravel())
+    )
+    theta_slice = model.predict(slice_points).reshape(xx.shape)
+    fig, ax = plt.subplots(figsize=(8.5, 5.2))
+    image = ax.contourf(xx, tt, theta_slice, levels=40, cmap="magma")
+    colorbar = fig.colorbar(image, ax=ax)
+    colorbar.set_label("Adaptive PINN theta at Y=0.5")
+    batches = np.array_split(
+        np.arange(len(assimilation_points)),
+        int(np.ceil(len(assimilation_points) / cfg.points_per_update)),
+    )
+    colors = plt.get_cmap("tab10")(np.linspace(0.0, 0.9, len(batches)))
+    for index, batch in enumerate(batches, start=1):
+        ax.scatter(
+            assimilation_points[batch, 0],
+            assimilation_points[batch, 2],
+            s=28,
+            color=colors[index - 1],
+            edgecolor="white",
+            linewidth=0.35,
+            label=f"window {index}",
+            zorder=3,
+        )
+    ax.set(
+        xlabel="Nondimensional coordinate X",
+        ylabel="Nondimensional time tau",
+        title="Streaming center-sensor windows over the adaptive PINN slice",
+        xlim=(0.0, 1.0),
+        ylim=(0.0, 1.2),
+    )
+    ax.legend(ncol=2, fontsize=8, loc="upper right")
+    fig.tight_layout()
+    fig.savefig(output_dir / "streaming_sensor_windows.png", dpi=180)
+    plt.close(fig)
+
+    # The paper supplies reference truth only at its center point. Plot honest
+    # center-point error histories instead of implying a full error field.
+    baseline_error = np.abs(baseline_prediction[:, 0] - assimilation_values[:, 0])
+    adaptive_error = np.abs(assimilation_prediction[:, 0] - assimilation_values[:, 0])
+    improvement = baseline_error - adaptive_error
+    fig, axes = plt.subplots(1, 3, figsize=(13, 4), sharex=True)
+    panels = (
+        (baseline_error, "Offline PINN absolute error", "tab:red"),
+        (adaptive_error, "Adaptive PINN absolute error", "tab:blue"),
+        (improvement, "|baseline error| - |adaptive error|", "tab:green"),
+    )
+    for ax, (values, title, color) in zip(axes, panels):
+        ax.axhline(0.0, color="0.5", linewidth=0.8)
+        ax.plot(assimilation_points[:, 2], values, "o-", markersize=3, color=color)
+        ax.set(xlabel="tau", title=title)
+        ax.grid(alpha=0.25)
+    axes[0].set_ylabel("Absolute theta error")
+    axes[2].set_ylabel("Positive means adaptation helped")
+    fig.tight_layout()
+    fig.savefig(output_dir / "baseline_adaptive_error_comparison.png", dpi=180)
+    plt.close(fig)
     print(f"Literature vs PINN RMSE ({cfg.case}): {literature_rmse:.8g}")
 
 
@@ -307,8 +386,18 @@ def main():
 
     cfg = Config(case=args.case)
     data = load_paper_data(args.reference_dir, cfg.case)
-    model, history = train_adaptively(cfg, data[0], data[1])
-    save_results(model, cfg, history, *data, args.output_dir)
+    model, history, baseline_prediction = train_adaptively(cfg, data[0], data[1])
+    save_results(
+        model,
+        cfg,
+        history,
+        data[0],
+        data[1],
+        baseline_prediction,
+        data[2],
+        data[3],
+        args.output_dir,
+    )
 
 
 if __name__ == "__main__":

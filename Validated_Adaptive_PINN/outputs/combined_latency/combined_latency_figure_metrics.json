@@ -1,0 +1,26 @@
+{
+  "configuration": {
+    "sample_spacing_tau": 1.25,
+    "batch_size_n": 1,
+    "observation_window_batches": 4,
+    "sensor_x": [
+      0.05,
+      0.275,
+      0.5,
+      0.725,
+      0.95
+    ],
+    "sensor_y": [
+      0.05,
+      0.275,
+      0.5,
+      0.725,
+      0.95
+    ],
+    "data_loss_weight": 20.0,
+    "adaptive_iterations_per_batch": 100
+  },
+  "offline_full_field_rmse": 0.04814358829428871,
+  "causal_prior_full_field_rmse": 0.03442882438847415,
+  "causal_posterior_full_field_rmse": 0.02451463094982966
+}

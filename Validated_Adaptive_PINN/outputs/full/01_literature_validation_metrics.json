@@ -1,0 +1,20 @@
+{
+  "table_1": {
+    "boundary_set": "set_1",
+    "published_rmse": 0.00025622561637372274,
+    "paper_equation_csv_rmse": 2.1519090095816043e-05,
+    "max_abs_published_error": 0.000423203430223687
+  },
+  "table_2": {
+    "boundary_set": "set_2",
+    "published_rmse": 0.04835285249493577,
+    "paper_equation_csv_rmse": 1.9458418102722324e-05,
+    "max_abs_published_error": 0.062287570876870105
+  },
+  "table_3": {
+    "boundary_set": "set_3",
+    "published_rmse": 0.10463875315400804,
+    "paper_equation_csv_rmse": 1.7085374688402128e-05,
+    "max_abs_published_error": 0.13653901094611803
+  }
+}

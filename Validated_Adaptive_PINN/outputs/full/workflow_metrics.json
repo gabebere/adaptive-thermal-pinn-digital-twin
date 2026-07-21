@@ -1,0 +1,237 @@
+{
+  "configuration": {
+    "tau_final": 100.0,
+    "time_instances": 41,
+    "batch_size_n": 5,
+    "sensor_count": 9,
+    "boundary_set": "set_1",
+    "changed_boundary_set": "set_2",
+    "switch_fraction": 0.5
+  },
+  "literature_validation": {
+    "table_1": {
+      "boundary_set": "set_1",
+      "published_rmse": 0.00025622561637372274,
+      "paper_equation_csv_rmse": 2.1519090095816043e-05,
+      "max_abs_published_error": 0.000423203430223687
+    },
+    "table_2": {
+      "boundary_set": "set_2",
+      "published_rmse": 0.04835285249493577,
+      "paper_equation_csv_rmse": 1.9458418102722324e-05,
+      "max_abs_published_error": 0.062287570876870105
+    },
+    "table_3": {
+      "boundary_set": "set_3",
+      "published_rmse": 0.10463875315400804,
+      "paper_equation_csv_rmse": 1.7085374688402128e-05,
+      "max_abs_published_error": 0.13653901094611803
+    }
+  },
+  "offline_pinn_global_rmse": 0.061929263772285,
+  "adaptive_pinn_global_rmse": 0.05238370995318278,
+  "adaptive_update_history": [
+    {
+      "batch": 1,
+      "time_start": 0.0,
+      "time_end": 0.5864709984787198,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 45,
+      "before_batch_rmse": 0.0977008005642183,
+      "after_batch_rmse": 0.09027219062361048,
+      "global_field_rmse_after_update": 0.07033777486564732
+    },
+    {
+      "batch": 2,
+      "time_start": 0.7804925946834771,
+      "time_end": 1.8246998644714618,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 90,
+      "before_batch_rmse": 0.09366978588097907,
+      "after_batch_rmse": 0.06090837984537986,
+      "global_field_rmse_after_update": 0.058473543921218604
+    },
+    {
+      "batch": 3,
+      "time_start": 2.170153879722701,
+      "time_end": 4.02935719089486,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 135,
+      "before_batch_rmse": 0.07370519836601556,
+      "after_batch_rmse": 0.058611394523944906,
+      "global_field_rmse_after_update": 0.05906787056219002
+    },
+    {
+      "batch": 4,
+      "time_start": 4.644435506853363,
+      "time_end": 7.954733234406392,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 180,
+      "before_batch_rmse": 0.03584290265334581,
+      "after_batch_rmse": 0.03294887663494287,
+      "global_field_rmse_after_update": 0.05966709626270108
+    },
+    {
+      "batch": 5,
+      "time_start": 9.049875621120892,
+      "time_end": 14.943836211226607,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 225,
+      "before_batch_rmse": 0.009165949163722178,
+      "after_batch_rmse": 0.009165953589485527,
+      "global_field_rmse_after_update": 0.05809716208047848
+    },
+    {
+      "batch": 6,
+      "time_start": 16.893729120895756,
+      "time_end": 27.38788230493525,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 270,
+      "before_batch_rmse": 0.02893578973707624,
+      "after_batch_rmse": 0.020155735391333827,
+      "global_field_rmse_after_update": 0.055160379273675106
+    },
+    {
+      "batch": 7,
+      "time_start": 30.85965219102699,
+      "time_end": 49.54441422268333,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 315,
+      "before_batch_rmse": 0.04415358385916077,
+      "after_batch_rmse": 0.03289657791135047,
+      "global_field_rmse_after_update": 0.05333747044417649
+    },
+    {
+      "batch": 8,
+      "time_start": 55.72587479531476,
+      "time_end": 88.99395522610187,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 360,
+      "before_batch_rmse": 0.05250255678160634,
+      "after_batch_rmse": 0.03962465938481303,
+      "global_field_rmse_after_update": 0.05253499059811533
+    },
+    {
+      "batch": 9,
+      "time_start": 100.00000000000003,
+      "time_end": 100.00000000000003,
+      "instances": 1,
+      "new_sensor_points": 9,
+      "accumulated_sensor_points": 369,
+      "before_batch_rmse": 0.048739391861842354,
+      "after_batch_rmse": 0.04583038811951533,
+      "global_field_rmse_after_update": 0.05238370995318278
+    }
+  ],
+  "switch_offline_global_rmse": 0.05071327380512933,
+  "switch_adaptive_global_rmse": 0.046988417338179655,
+  "switch_update_history": [
+    {
+      "batch": 1,
+      "time_start": 0.0,
+      "time_end": 10.0,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 45,
+      "before_batch_rmse": 0.10561121368448519,
+      "after_batch_rmse": 0.08001501622483936,
+      "global_field_rmse_after_update": 0.10204547016176682
+    },
+    {
+      "batch": 2,
+      "time_start": 12.5,
+      "time_end": 22.5,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 90,
+      "before_batch_rmse": 0.02339361794688158,
+      "after_batch_rmse": 0.012636379571795212,
+      "global_field_rmse_after_update": 0.07874079568618397
+    },
+    {
+      "batch": 3,
+      "time_start": 25.0,
+      "time_end": 35.0,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 135,
+      "before_batch_rmse": 0.03404408737915053,
+      "after_batch_rmse": 0.01825282011920187,
+      "global_field_rmse_after_update": 0.06440870389850906
+    },
+    {
+      "batch": 4,
+      "time_start": 37.5,
+      "time_end": 47.5,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 180,
+      "before_batch_rmse": 0.03458036342437732,
+      "after_batch_rmse": 0.023882741989323334,
+      "global_field_rmse_after_update": 0.05759550783519827
+    },
+    {
+      "batch": 5,
+      "time_start": 50.0,
+      "time_end": 60.0,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 225,
+      "before_batch_rmse": 0.09603315054452947,
+      "after_batch_rmse": 0.08509841584386228,
+      "global_field_rmse_after_update": 0.05020389900161132
+    },
+    {
+      "batch": 6,
+      "time_start": 62.5,
+      "time_end": 72.5,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 270,
+      "before_batch_rmse": 0.02476573167505844,
+      "after_batch_rmse": 0.019866582236034654,
+      "global_field_rmse_after_update": 0.04881731122170624
+    },
+    {
+      "batch": 7,
+      "time_start": 75.0,
+      "time_end": 85.0,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 315,
+      "before_batch_rmse": 0.0254735933186952,
+      "after_batch_rmse": 0.021365172191408554,
+      "global_field_rmse_after_update": 0.04794618035501286
+    },
+    {
+      "batch": 8,
+      "time_start": 87.5,
+      "time_end": 97.5,
+      "instances": 5,
+      "new_sensor_points": 45,
+      "accumulated_sensor_points": 360,
+      "before_batch_rmse": 0.025580737598800952,
+      "after_batch_rmse": 0.021444587415077297,
+      "global_field_rmse_after_update": 0.047214567468043936
+    },
+    {
+      "batch": 9,
+      "time_start": 100.0,
+      "time_end": 100.0,
+      "instances": 1,
+      "new_sensor_points": 9,
+      "accumulated_sensor_points": 369,
+      "before_batch_rmse": 0.023446835940302318,
+      "after_batch_rmse": 0.022529122815685282,
+      "global_field_rmse_after_update": 0.046988417338179655
+    }
+  ]
+}

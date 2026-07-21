@@ -51,6 +51,12 @@ Run the boundary-change latency parameter study:
 python latency_study.py --profile full
 ```
 
+Generate the two paper-style figures for the combined low-latency case:
+
+```powershell
+python combined_latency_figures.py --profile full
+```
+
 The study cases are the editable `LATENCY_EXPERIMENTS` rows in
 `parameters.py`. They compare sampling interval, update batch size, sensor
 placement, recent-history length, and data-loss weight while keeping the same
@@ -80,4 +86,6 @@ The profile-specific output directory contains:
 - `05_adaptive_pinn_error.png`;
 - `06_boundary_change_response.png` and switch-reference NPZ;
 - `latency_study/07_latency_parameter_sweep.png`, CSV, and JSON;
+- `combined_latency/08_combined_streaming_sensors.png`;
+- `combined_latency/09_combined_error_fields.png` and their source-data NPZ;
 - `workflow_metrics.json`.

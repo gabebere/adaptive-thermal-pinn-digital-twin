@@ -161,6 +161,8 @@ class AdaptiveResult:
     time_rmse: np.ndarray
     causal_prior_time_rmse: np.ndarray
     causal_posterior_time_rmse: np.ndarray
+    causal_prior_field_prediction: np.ndarray
+    causal_posterior_field_prediction: np.ndarray
     history: list[dict]
 
 
@@ -219,6 +221,8 @@ def adapt_online(
     revealed_batches: list[np.ndarray] = []
     causal_prior = np.full(len(times), np.nan)
     causal_posterior = np.full(len(times), np.nan)
+    causal_prior_field = np.full_like(field_values, np.nan, dtype=float)
+    causal_posterior_field = np.full_like(field_values, np.nan, dtype=float)
     for batch_index, batch_times in enumerate(time_batches, start=1):
         revealed_batches.append(batch_times)
         if cfg.observation_window_batches is None:
@@ -246,6 +250,7 @@ def adapt_online(
             int(np.flatnonzero(np.isclose(times, tau))[0]) for tau in batch_times
         ]
         causal_prior[batch_time_indices] = before_field_by_time
+        causal_prior_field[new_field_mask] = before_field
 
         data = make_problem(
             cfg,
@@ -273,6 +278,7 @@ def adapt_online(
             batch_times,
         )
         causal_posterior[batch_time_indices] = after_field_by_time
+        causal_posterior_field[new_field_mask] = after_field
         history.append(
             {
                 "batch": batch_index,
@@ -304,5 +310,7 @@ def adapt_online(
         time_rmse=rmse_by_time(field_points, field_values, final_prediction, times),
         causal_prior_time_rmse=causal_prior,
         causal_posterior_time_rmse=causal_posterior,
+        causal_prior_field_prediction=causal_prior_field,
+        causal_posterior_field_prediction=causal_posterior_field,
         history=history,
     )

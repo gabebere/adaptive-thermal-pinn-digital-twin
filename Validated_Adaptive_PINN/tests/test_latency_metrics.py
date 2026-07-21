@@ -6,6 +6,7 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from latency_study import _first_event_update, _settling_metrics
+from parameters import LATENCY_EXPERIMENTS, config_for_latency_experiment, make_config
 
 
 def test_first_event_update_counts_changed_samples_in_batch():
@@ -37,3 +38,13 @@ def test_settling_cannot_precede_first_effective_update():
         earliest_update_tau=6.0,
     )
     assert metrics["recovery_tau"] == 7.0
+
+
+def test_combined_latency_configuration_is_reproducible():
+    base = make_config("full")
+    combined = next(row for row in LATENCY_EXPERIMENTS if row.name == "combined low-latency")
+    cfg = config_for_latency_experiment(base, combined)
+    assert cfg.time_instances == 81
+    assert cfg.batch_size_n == 1
+    assert cfg.observation_window_batches == 4
+    assert cfg.sensor_x == (0.05, 0.5, 0.95)

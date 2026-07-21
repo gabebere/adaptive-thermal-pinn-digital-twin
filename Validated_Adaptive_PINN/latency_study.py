@@ -5,7 +5,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-from dataclasses import asdict, replace
+from dataclasses import asdict
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -16,30 +16,12 @@ from parameters import (
     LATENCY_RECOVERY_CONSECUTIVE_INSTANCES,
     LATENCY_RECOVERY_FRACTION,
     LatencyExperiment,
+    config_for_latency_experiment,
     make_config,
 )
 from pinn_workflow import adapt_online, predict, rmse_by_time, train_baseline
 from reference_data import generate_reference_dataset
 from switch_solver import generate_switch_dataset
-
-
-def _experiment_config(base, experiment: LatencyExperiment):
-    intervals = int(round(base.tau_final / experiment.sample_spacing_tau))
-    if not np.isclose(intervals * experiment.sample_spacing_tau, base.tau_final):
-        raise ValueError(
-            f"{experiment.name}: sample spacing must divide tau_final exactly"
-        )
-    return replace(
-        base,
-        time_instances=intervals + 1,
-        batch_size_n=experiment.batch_size_n,
-        sensor_x=experiment.sensor_x,
-        sensor_y=experiment.sensor_y,
-        observation_window_batches=experiment.observation_window_batches,
-        data_loss_weight=experiment.data_loss_weight,
-        adaptive_iterations_per_batch=experiment.adaptive_iterations_per_batch,
-        reveal_boundary_change_to_pinn=experiment.reveal_boundary_change_to_pinn,
-    )
 
 
 def _settling_metrics(
@@ -186,7 +168,7 @@ def run_study(profile: str, output_dir: Path):
 
     results = []
     for index, experiment in enumerate(experiments, start=1):
-        cfg = _experiment_config(base, experiment)
+        cfg = config_for_latency_experiment(base, experiment)
         cfg.validate()
         print(f"[{index}/{len(experiments)}] {experiment.name}")
         switch_data = generate_switch_dataset(cfg)

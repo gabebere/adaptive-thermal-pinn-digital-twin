@@ -178,3 +178,25 @@ LATENCY_EXPERIMENTS = (
 
 LATENCY_RECOVERY_FRACTION = 0.50
 LATENCY_RECOVERY_CONSECUTIVE_INSTANCES = 2
+
+
+def config_for_latency_experiment(
+    base: WorkflowConfig, experiment: LatencyExperiment
+) -> WorkflowConfig:
+    """Apply one latency-study row to a base workflow configuration."""
+    intervals = int(round(base.tau_final / experiment.sample_spacing_tau))
+    if not np.isclose(intervals * experiment.sample_spacing_tau, base.tau_final):
+        raise ValueError(
+            f"{experiment.name}: sample spacing must divide tau_final exactly"
+        )
+    return replace(
+        base,
+        time_instances=intervals + 1,
+        batch_size_n=experiment.batch_size_n,
+        sensor_x=experiment.sensor_x,
+        sensor_y=experiment.sensor_y,
+        observation_window_batches=experiment.observation_window_batches,
+        data_loss_weight=experiment.data_loss_weight,
+        adaptive_iterations_per_batch=experiment.adaptive_iterations_per_batch,
+        reveal_boundary_change_to_pinn=experiment.reveal_boundary_change_to_pinn,
+    )

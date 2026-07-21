@@ -26,6 +26,8 @@ Edit `parameters.py`. It contains:
 - final time and number of time instances;
 - sensor locations;
 - `batch_size_n`;
+- `observation_window_batches` (`None` keeps all history; an integer uses a
+  rolling recent-history window);
 - network layers, learning rates, loss weight, and iterations;
 - boundary-switch time, boundary set, and solver resolution.
 
@@ -43,6 +45,17 @@ Report-quality run to `tau=100`:
 python run_workflow.py --profile full
 ```
 
+Run the boundary-change latency parameter study:
+
+```powershell
+python latency_study.py --profile full
+```
+
+The study cases are the editable `LATENCY_EXPERIMENTS` rows in
+`parameters.py`. They compare sampling interval, update batch size, sensor
+placement, recent-history length, and data-loss weight while keeping the same
+physical boundary event.
+
 ## Online update semantics
 
 For each group of `n` new time instances, the current PINN predicts the new
@@ -50,6 +63,11 @@ sensor values before seeing them. Their RMSE is recorded. All numerical sensor
 observations revealed so far are then added as a DeepXDE `PointSetBC` data-loss
 term. The same neural network weights are updated with Adam; the network is not
 reinitialized. The physical PDE coefficients remain fixed.
+
+Two full-field error sequences are saved. `causal_prior_time_rmse` is the true
+online prediction error before each new batch is assimilated.
+`causal_posterior_time_rmse` is the fit after assimilating that batch. These are
+not produced by evaluating the final network retrospectively over the past.
 
 ## Outputs
 
@@ -61,4 +79,5 @@ The profile-specific output directory contains:
 - `04_streaming_numerical_inputs.png`;
 - `05_adaptive_pinn_error.png`;
 - `06_boundary_change_response.png` and switch-reference NPZ;
+- `latency_study/07_latency_parameter_sweep.png`, CSV, and JSON;
 - `workflow_metrics.json`.

@@ -104,20 +104,21 @@ def plot_adaptive_comparison(cfg, reference, baseline, adaptive, output_dir: Pat
     axes[2].axhline(0.0, color="0.5", linewidth=0.8)
     axes[2].plot(reference.times, improvement, "o-", markersize=3)
     axes[2].set(title="Offline RMSE - adaptive RMSE", ylabel="positive means adaptation helped")
-    batch_ends = [row["time_end"] for row in adaptive.history]
     axes[3].plot(
-        batch_ends,
-        [row["before_batch_rmse"] for row in adaptive.history],
+        reference.times,
+        adaptive.causal_prior_time_rmse,
         "o-",
-        label="before update",
+        markersize=3,
+        label="prediction before update",
     )
     axes[3].plot(
-        batch_ends,
-        [row["after_batch_rmse"] for row in adaptive.history],
+        reference.times,
+        adaptive.causal_posterior_time_rmse,
         "o-",
-        label="after update",
+        markersize=3,
+        label="fit after update",
     )
-    axes[3].set(title="New-batch sensor RMSE", ylabel="sensor RMSE")
+    axes[3].set(title="Causal online full-field RMSE", ylabel="full-field RMSE")
     axes[3].legend(fontsize=8)
     for ax in axes:
         ax.set_xlabel("tau")
@@ -148,15 +149,28 @@ def plot_switch_test(cfg, switch_data, baseline_prediction, adaptive, output_dir
             )
         )
     baseline_time_rmse = np.asarray(baseline_time_rmse)
-    improvement = baseline_time_rmse - adaptive.time_rmse
+    improvement = baseline_time_rmse - adaptive.causal_prior_time_rmse
     fig, axes = plt.subplots(1, 3, figsize=(14, 4.3))
     axes[0].plot(switch_data.times, baseline_time_rmse, label="offline PINN")
-    axes[0].plot(switch_data.times, adaptive.time_rmse, label="adaptive PINN")
-    axes[0].set(title="Full-field error through boundary event", ylabel="RMSE")
+    axes[0].plot(
+        switch_data.times,
+        adaptive.causal_prior_time_rmse,
+        label="adaptive prediction before update",
+    )
+    axes[0].plot(
+        switch_data.times,
+        adaptive.causal_posterior_time_rmse,
+        label="adaptive fit after update",
+        alpha=0.75,
+    )
+    axes[0].set(title="Causal full-field error through event", ylabel="RMSE")
     axes[0].legend()
     axes[1].axhline(0.0, color="0.5", linewidth=0.8)
     axes[1].plot(switch_data.times, improvement)
-    axes[1].set(title="Offline RMSE - adaptive RMSE", ylabel="positive means adaptation helped")
+    axes[1].set(
+        title="Offline RMSE - next adaptive prediction",
+        ylabel="positive means adaptation helped",
+    )
     batch_ends = [row["time_end"] for row in adaptive.history]
     axes[2].plot(
         batch_ends,
@@ -178,7 +192,8 @@ def plot_switch_test(cfg, switch_data, baseline_prediction, adaptive, output_dir
         ax.grid(alpha=0.25)
     fig.suptitle(
         f"Unknown boundary change: {cfg.boundary_set.name} to "
-        f"{cfg.changed_boundary_set.name} at tau={switch_data.switch_tau:g}"
+        f"{cfg.changed_boundary_set.name} at tau={switch_data.switch_tau:g}; "
+        "each point uses the model state available at that time"
     )
     fig.tight_layout()
     fig.savefig(output_dir / "06_boundary_change_response.png", dpi=180)

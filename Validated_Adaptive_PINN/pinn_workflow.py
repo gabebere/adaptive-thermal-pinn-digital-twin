@@ -63,24 +63,46 @@ def make_problem(
     def top(X, on_boundary):
         return on_boundary and dde.utils.isclose(X[1], 1.0)
 
-    def side_function(coordinate_index: int, decay: float, amplitude: float):
+    def side_function(coordinate_index: int, side_index: int):
+        decay = boundaries.decays[side_index]
+        amplitude = boundaries.amplitudes[side_index]
+
         def function(X):
             coordinate = X[:, coordinate_index : coordinate_index + 1]
             tau = np.expm1(log_scale * X[:, 2:3])
-            return amplitude * boundary_spatial_profile(coordinate) * np.exp(-decay * tau)
+            value = (
+                amplitude
+                * boundary_spatial_profile(coordinate)
+                * np.exp(-decay * tau)
+            )
+            if not cfg.reveal_boundary_change_to_pinn:
+                return value
+
+            switch_tau = cfg.switch_fraction * cfg.tau_final
+            changed_decay = cfg.changed_boundary_set.decays[side_index]
+            changed_amplitude = cfg.changed_boundary_set.amplitudes[side_index]
+            changed_tau = (
+                np.maximum(tau - switch_tau, 0.0)
+                if cfg.reset_boundary_clock_at_switch
+                else tau
+            )
+            changed_value = (
+                changed_amplitude
+                * boundary_spatial_profile(coordinate)
+                * np.exp(-changed_decay * changed_tau)
+            )
+            return np.where(tau >= switch_tau, changed_value, value)
 
         return function
 
-    d1, d2, d3, d4 = boundaries.decays
-    a1, a2, a3, a4 = boundaries.amplitudes
     geometry = dde.geometry.Rectangle([0.0, 0.0], [1.0, 1.0])
     time_domain = dde.geometry.TimeDomain(0.0, 1.0)
     geometry_time = dde.geometry.GeometryXTime(geometry, time_domain)
     constraints = [
-        dde.icbc.DirichletBC(geometry_time, side_function(1, d1, a1), left),
-        dde.icbc.DirichletBC(geometry_time, side_function(1, d2, a2), right),
-        dde.icbc.DirichletBC(geometry_time, side_function(0, d3, a3), bottom),
-        dde.icbc.DirichletBC(geometry_time, side_function(0, d4, a4), top),
+        dde.icbc.DirichletBC(geometry_time, side_function(1, 0), left),
+        dde.icbc.DirichletBC(geometry_time, side_function(1, 1), right),
+        dde.icbc.DirichletBC(geometry_time, side_function(0, 2), bottom),
+        dde.icbc.DirichletBC(geometry_time, side_function(0, 3), top),
         dde.icbc.IC(
             geometry_time,
             lambda X: initial_condition(X[:, 0:1], X[:, 1:2]),
@@ -137,6 +159,8 @@ class AdaptiveResult:
     field_prediction: np.ndarray
     field_rmse: float
     time_rmse: np.ndarray
+    causal_prior_time_rmse: np.ndarray
+    causal_posterior_time_rmse: np.ndarray
     history: list[dict]
 
 
@@ -145,6 +169,7 @@ def train_baseline(
     field_points: np.ndarray,
     field_values: np.ndarray,
     times: np.ndarray,
+    verbose: int = 1,
 ) -> BaselineResult:
     dde.config.set_random_seed(cfg.seed)
     network = make_network(cfg)
@@ -153,6 +178,7 @@ def train_baseline(
     model.train(
         iterations=cfg.baseline_iterations,
         display_every=max(1, cfg.baseline_iterations // 5),
+        verbose=verbose,
     )
     field_prediction = predict(model, field_points, cfg)
     return BaselineResult(
@@ -172,8 +198,14 @@ def adapt_online(
     field_points: np.ndarray,
     field_values: np.ndarray,
     times: np.ndarray,
+    verbose: int = 1,
 ) -> AdaptiveResult:
-    """Reveal n time instances, predict, then train with all observations seen."""
+    """Reveal n instances, predict, then update using all or recent observations.
+
+    The causal arrays save the error produced by the network state that actually
+    existed at each online step.  They avoid retrospectively evaluating the
+    final adapted network over times that occurred before it was trained.
+    """
     network = make_network(cfg)
     network.load_state_dict(copy.deepcopy(baseline_state))
     model = dde.Model(make_problem(cfg, cfg.boundary_set), network)
@@ -184,15 +216,36 @@ def adapt_online(
         for start in range(0, len(times), cfg.batch_size_n)
     ]
     history = []
-    observed_times = []
+    revealed_batches: list[np.ndarray] = []
+    causal_prior = np.full(len(times), np.nan)
+    causal_posterior = np.full(len(times), np.nan)
     for batch_index, batch_times in enumerate(time_batches, start=1):
-        observed_times.extend(batch_times.tolist())
+        revealed_batches.append(batch_times)
+        if cfg.observation_window_batches is None:
+            training_batches = revealed_batches
+        else:
+            training_batches = revealed_batches[-cfg.observation_window_batches :]
+        training_times = np.concatenate(training_batches)
         new_mask = np.isin(np.round(sensor_points[:, 2], 12), np.round(batch_times, 12))
         observed_mask = np.isin(
-            np.round(sensor_points[:, 2], 12), np.round(observed_times, 12)
+            np.round(sensor_points[:, 2], 12), np.round(training_times, 12)
+        )
+        new_field_mask = np.isin(
+            np.round(field_points[:, 2], 12), np.round(batch_times, 12)
         )
         before = predict(model, sensor_points[new_mask], cfg)
         before_rmse = rmse(sensor_values[new_mask], before)
+        before_field = predict(model, field_points[new_field_mask], cfg)
+        before_field_by_time = rmse_by_time(
+            field_points[new_field_mask],
+            field_values[new_field_mask],
+            before_field,
+            batch_times,
+        )
+        batch_time_indices = [
+            int(np.flatnonzero(np.isclose(times, tau))[0]) for tau in batch_times
+        ]
+        causal_prior[batch_time_indices] = before_field_by_time
 
         data = make_problem(
             cfg,
@@ -209,9 +262,17 @@ def adapt_online(
         model.train(
             iterations=cfg.adaptive_iterations_per_batch,
             display_every=max(1, cfg.adaptive_iterations_per_batch),
+            verbose=verbose,
         )
         after = predict(model, sensor_points[new_mask], cfg)
-        field_prediction = predict(model, field_points, cfg)
+        after_field = predict(model, field_points[new_field_mask], cfg)
+        after_field_by_time = rmse_by_time(
+            field_points[new_field_mask],
+            field_values[new_field_mask],
+            after_field,
+            batch_times,
+        )
+        causal_posterior[batch_time_indices] = after_field_by_time
         history.append(
             {
                 "batch": batch_index,
@@ -219,10 +280,19 @@ def adapt_online(
                 "time_end": float(batch_times[-1]),
                 "instances": int(len(batch_times)),
                 "new_sensor_points": int(np.count_nonzero(new_mask)),
+                "total_revealed_time_instances": int(sum(map(len, revealed_batches))),
+                "training_time_instances": int(len(training_times)),
+                "training_sensor_points": int(np.count_nonzero(observed_mask)),
+                # Backward-compatible name used by earlier result readers.
                 "accumulated_sensor_points": int(np.count_nonzero(observed_mask)),
                 "before_batch_rmse": before_rmse,
                 "after_batch_rmse": rmse(sensor_values[new_mask], after),
-                "global_field_rmse_after_update": rmse(field_values, field_prediction),
+                "before_batch_field_rmse": rmse(
+                    field_values[new_field_mask], before_field
+                ),
+                "after_batch_field_rmse": rmse(
+                    field_values[new_field_mask], after_field
+                ),
             }
         )
 
@@ -232,5 +302,7 @@ def adapt_online(
         field_prediction=final_prediction,
         field_rmse=rmse(field_values, final_prediction),
         time_rmse=rmse_by_time(field_points, field_values, final_prediction, times),
+        causal_prior_time_rmse=causal_prior,
+        causal_posterior_time_rmse=causal_posterior,
         history=history,
     )

@@ -58,6 +58,10 @@ class WorkflowConfig:
     sensor_x: tuple[float, ...] = (0.2, 0.5, 0.8)
     sensor_y: tuple[float, ...] = (0.2, 0.5, 0.8)
     batch_size_n: int = 5
+    # None retains every observation.  An integer keeps only that many recent
+    # batches in the data-loss term, which lets the PINN forget stale pre-event
+    # data more quickly after an unknown boundary change.
+    observation_window_batches: int | None = None
 
     # DeepXDE network and optimization.
     hidden_layers: tuple[int, ...] = (48, 48, 48)
@@ -85,6 +89,11 @@ class WorkflowConfig:
     def validate(self) -> None:
         if self.batch_size_n < 1:
             raise ValueError("batch_size_n must be positive")
+        if (
+            self.observation_window_batches is not None
+            and self.observation_window_batches < 1
+        ):
+            raise ValueError("observation_window_batches must be positive or None")
         if self.time_instances < 3:
             raise ValueError("time_instances must be at least 3")
         if not 0.0 < self.switch_fraction < 1.0:
@@ -117,3 +126,55 @@ def make_config(profile: str = "full") -> WorkflowConfig:
             switch_solver_substeps_per_interval=2,
         )
     raise ValueError("profile must be 'smoke' or 'full'")
+
+
+@dataclass(frozen=True)
+class LatencyExperiment:
+    """One editable row in the boundary-change latency study."""
+
+    name: str
+    sample_spacing_tau: float
+    batch_size_n: int
+    sensor_x: tuple[float, ...] = (0.2, 0.5, 0.8)
+    sensor_y: tuple[float, ...] = (0.2, 0.5, 0.8)
+    observation_window_batches: int | None = None
+    data_loss_weight: float = 10.0
+    adaptive_iterations_per_batch: int = 100
+    reveal_boundary_change_to_pinn: bool = False
+
+
+# These experiments isolate one latency control at a time, followed by a
+# combined low-latency setup.  Add or edit rows here without changing the
+# training or plotting code.
+LATENCY_EXPERIMENTS = (
+    LatencyExperiment("current: n=5, all history", 2.5, 5),
+    LatencyExperiment("smaller batch: n=2", 2.5, 2),
+    LatencyExperiment("immediate updates: n=1", 2.5, 1),
+    LatencyExperiment("denser sampling: dt=1.25", 1.25, 2),
+    LatencyExperiment(
+        "boundary-aware sensors",
+        2.5,
+        2,
+        sensor_x=(0.05, 0.5, 0.95),
+        sensor_y=(0.05, 0.5, 0.95),
+    ),
+    LatencyExperiment(
+        "recent history: 2 batches",
+        2.5,
+        2,
+        observation_window_batches=2,
+    ),
+    LatencyExperiment(
+        "combined low-latency",
+        1.25,
+        1,
+        sensor_x=(0.05, 0.5, 0.95),
+        sensor_y=(0.05, 0.5, 0.95),
+        observation_window_batches=4,
+        data_loss_weight=20.0,
+    ),
+)
+
+
+LATENCY_RECOVERY_FRACTION = 0.50
+LATENCY_RECOVERY_CONSECUTIVE_INSTANCES = 2

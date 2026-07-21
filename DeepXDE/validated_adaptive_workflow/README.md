@@ -1,5 +1,10 @@
 # Validated analytical and adaptive PINN workflow
 
+This is the repository's primary full-field DeepXDE workflow. Independent
+paper tables and expanded analytical reference artifacts are organized under
+`../../Literature_results/`; PINN outputs remain in this workflow's `outputs/`
+directory.
+
 This folder implements the workflow in five separate scientific stages:
 
 1. Evaluate the general analytical series solution for all four space-time

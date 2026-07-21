@@ -82,10 +82,10 @@ referring back to the source code.
 Requirements are Python 3.10+ and NumPy. From the repository root, run:
 
 ```bash
-python paper_result/mdpi_416_series.py
+python Literature_results/mdpi_416_series.py
 ```
 
-The program recreates all files in `paper_result/mdpi_416_tables/`. For each
+The program recreates all files in `Literature_results/mdpi_416_tables/`. For each
 boundary-condition case it produces:
 
 - a `study_times` CSV at the eight times printed in the paper,
@@ -135,6 +135,8 @@ reported reference data with an unresolved publication-level discrepancy.
 - `mdpi_416_tables/table_*_study_times.csv`: original study times, calculated values, and exact published values.
 - `mdpi_416_tables/table_*_40_times.csv`: 40-time extensions calculated from the printed equations.
 - `mdpi_416_tables/README.txt`: compact description of the generated data.
+- `expanded_analytical_results/`: long-horizon and combined-boundary analytical
+  reference artifacts used by the validated adaptive workflow.
 
 ## Reference
 

@@ -1,18 +1,18 @@
-# DeepXDE adaptive heat PINN
+# Paper-data DeepXDE adaptive heat PINN
 
 This folder contains the DeepXDE implementation and its dependencies.
 
-> Folder-name note: `DeepXDE_1D` is the requested project folder name. The
-> selected Axioms 12 (2023), 416 reference data describes a **2D** heat problem,
-> so the paper-compatible network has inputs `(X, Y, tau)`. Reducing it to one
-> spatial dimension would no longer reproduce the cited paper problem.
+The selected Axioms 12 (2023), 416 reference data describes a **2D** heat
+problem, so the paper-compatible network has inputs `(X, Y, tau)`. Reducing it
+to one spatial dimension would no longer reproduce the cited paper problem.
 
 ## Reference data
 
-The script reads the reference CSV files without modifying them from:
+The script reads the reference CSV files without modifying them from the
+repository-relative directory:
 
 ```text
-C:\Users\jblec\Technion\Spring_2026\Machine Learning\Project\Literature_result\mdpi_416_tables
+../../Literature_results/mdpi_416_tables
 ```
 
 - `table_N_40_times.csv`: 40 center-point values used for sequential adaptation.

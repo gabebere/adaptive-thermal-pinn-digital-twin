@@ -23,6 +23,20 @@ class ReferenceDataset:
     sensor_values: np.ndarray
 
 
+def save_reference_csv(dataset: ReferenceDataset, path: Path) -> None:
+    """Export the full analytical reference field in a readable table."""
+    points = np.asarray(dataset.field_points, dtype=float)
+    values = np.asarray(dataset.field_values, dtype=float).reshape(-1, 1)
+    np.savetxt(
+        path,
+        np.column_stack((points, values)),
+        delimiter=",",
+        header="x,y,tau,temperature",
+        comments="",
+        fmt="%.16g",
+    )
+
+
 def make_sensor_points(cfg: WorkflowConfig, times: np.ndarray) -> np.ndarray:
     xx, yy, tt = np.meshgrid(cfg.sensor_x, cfg.sensor_y, times, indexing="xy")
     return np.column_stack((xx.ravel(), yy.ravel(), tt.ravel()))
@@ -48,6 +62,7 @@ def generate_reference_dataset(cfg: WorkflowConfig, output_dir: Path) -> Referen
         sensor_points=sensor_points,
         sensor_values=sensor_values,
     )
+    save_reference_csv(dataset, output_dir / "02_validated_reference_dataset.csv")
 
     # X-time slice through the center Y=0.5.
     slice_points = np.column_stack(

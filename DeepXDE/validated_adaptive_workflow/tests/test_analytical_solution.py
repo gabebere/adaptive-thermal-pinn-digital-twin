@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from analytical_solution import boundary_values, initial_condition, temperature
 from parameters import PAPER_BOUNDARY_SETS
+from reference_data import ReferenceDataset, save_reference_csv
 
 
 def test_initial_condition_inside_domain():
@@ -31,3 +32,24 @@ def test_all_four_boundaries():
         expected = boundary_values(points, boundaries)[name]
         actual = temperature(points, boundaries, terms=12)[:, 0]
         np.testing.assert_allclose(actual, expected, atol=2e-12)
+
+
+def test_reference_csv_export(tmp_path):
+    points = np.array([[0.0, 0.0, 0.0], [0.5, 0.5, 100.0]])
+    values = np.array([[0.0], [0.125]])
+    dataset = ReferenceDataset(
+        points,
+        values,
+        np.array([0.0, 100.0]),
+        np.array([0.0, 0.5]),
+        np.array([0.0, 0.5]),
+        points,
+        values,
+    )
+    destination = tmp_path / "long_horizon.csv"
+    save_reference_csv(dataset, destination)
+
+    exported = np.genfromtxt(destination, delimiter=",", names=True)
+    assert exported.dtype.names == ("x", "y", "tau", "temperature")
+    np.testing.assert_allclose(exported["tau"], [0.0, 100.0])
+    np.testing.assert_allclose(exported["temperature"], values[:, 0])

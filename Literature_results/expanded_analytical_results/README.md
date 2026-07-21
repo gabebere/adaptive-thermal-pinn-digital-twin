@@ -9,6 +9,8 @@ the eight published study times used by the literature reproduction.
   the full configured horizon, ending at dimensionless time `tau = 100`.
 - `02_validated_reference_dataset.npz` contains the corresponding full-field
   reference dataset.
+- `02_validated_reference_dataset.csv` contains the same 11,849 full-field
+  values in readable `x`, `y`, `tau`, and `temperature` columns.
 
 ## `combined_boundary_change/`
 

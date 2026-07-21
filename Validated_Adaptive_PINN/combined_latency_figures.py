@@ -11,6 +11,7 @@ from types import SimpleNamespace
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import PowerNorm, TwoSlopeNorm
+from scipy.interpolate import RegularGridInterpolator
 
 from parameters import LATENCY_EXPERIMENTS, config_for_latency_experiment, make_config
 from pinn_workflow import adapt_online, predict, rmse, train_baseline
@@ -49,18 +50,31 @@ def plot_streaming_sensors(cfg, data, output_dir: Path, reference_slice=None):
             data.field_points, data.field_values, data.times, data.x
         )
     displayed_reference = np.clip(reference_slice, 0.0, None)
+    dense_x = np.linspace(float(data.x[0]), float(data.x[-1]), 401)
+    dense_times = np.linspace(float(data.times[0]), float(data.times[-1]), 801)
+    dense_time_mesh, dense_x_mesh = np.meshgrid(dense_times, dense_x, indexing="ij")
+    interpolator = RegularGridInterpolator(
+        (data.times, data.x),
+        displayed_reference,
+        method="linear",
+        bounds_error=False,
+    )
+    dense_reference = interpolator(
+        np.column_stack((dense_time_mesh.ravel(), dense_x_mesh.ravel()))
+    ).reshape(dense_time_mesh.shape)
     fig, ax = plt.subplots(figsize=(10.5, 6.2))
     fig.subplots_adjust(left=0.09, right=0.91, bottom=0.24, top=0.90)
-    image = ax.pcolormesh(
-        data.x,
-        data.times,
-        displayed_reference,
-        shading="auto",
-        cmap="magma",
+    image = ax.imshow(
+        dense_reference,
+        extent=(dense_x[0], dense_x[-1], dense_times[0], dense_times[-1]),
+        origin="lower",
+        aspect="auto",
+        interpolation="bilinear",
+        cmap="viridis",
         norm=PowerNorm(
-            gamma=0.30,
+            gamma=0.35,
             vmin=0.0,
-            vmax=float(np.max(displayed_reference)),
+            vmax=float(np.max(dense_reference)),
         ),
     )
     fig.colorbar(
@@ -87,10 +101,10 @@ def plot_streaming_sensors(cfg, data, output_dir: Path, reference_slice=None):
         ax.scatter(
             center_points[mask, 0],
             center_points[mask, 2],
-            s=20,
+            s=13,
             color=color,
             edgecolor="white",
-            linewidth=0.35,
+            linewidth=0.25,
             label=label,
             zorder=3,
         )
@@ -114,8 +128,8 @@ def plot_streaming_sensors(cfg, data, output_dir: Path, reference_slice=None):
         "Fig. 8. Sparse boundary-aware observations used by the combined low-latency "
         "adaptive PINN. Colors group the run into four display segments; they are not "
         "training batches. The model updates after every time instance (n=1) and retains "
-        "only the four most recent time instances in its data-loss window. Power-scaled "
-        "colors reveal lower-amplitude thermal structure while time remains linear.",
+        "only the four most recent time instances in its data-loss window. The interpolated "
+        "viridis field uses power-scaled colors while time remains linear.",
     )
     path = output_dir / "08_combined_streaming_sensors.png"
     fig.savefig(path, dpi=200)

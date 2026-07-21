@@ -18,7 +18,7 @@ from plots import (
     save_metrics,
 )
 from reference_data import generate_reference_dataset
-from switch_solver import generate_switch_dataset
+from switch_solver import generate_switch_dataset, save_switch_csv
 
 
 def main():
@@ -73,6 +73,7 @@ def main():
         times=switch_data.times,
         switch_tau=switch_data.switch_tau,
     )
+    save_switch_csv(switch_data, output_dir / "06_boundary_change_reference.csv")
     switch_baseline_prediction = predict(baseline.model, switch_data.field_points, cfg)
     switch_adaptive = adapt_online(
         cfg,

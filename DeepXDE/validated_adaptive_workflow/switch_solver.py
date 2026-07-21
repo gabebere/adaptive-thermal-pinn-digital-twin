@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 
 import numpy as np
 from scipy import sparse
@@ -21,6 +22,22 @@ class SwitchDataset:
     x: np.ndarray
     y: np.ndarray
     switch_tau: float
+
+
+def save_switch_csv(dataset: SwitchDataset, path: Path) -> None:
+    """Export the full boundary-change reference in a human-readable format."""
+    points = np.asarray(dataset.field_points, dtype=float)
+    values = np.asarray(dataset.field_values, dtype=float).reshape(-1, 1)
+    is_post_switch = (points[:, 2] >= dataset.switch_tau).astype(int).reshape(-1, 1)
+    rows = np.column_stack((points, values, is_post_switch))
+    np.savetxt(
+        path,
+        rows,
+        delimiter=",",
+        header="x,y,tau,temperature,is_post_switch",
+        comments="",
+        fmt=("%.10g", "%.10g", "%.10g", "%.16g", "%d"),
+    )
 
 
 def _boundary_time(

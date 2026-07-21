@@ -2,7 +2,7 @@
 
 The paper problem is 2-D. Inputs are nondimensional (X, Y, tau), and the output
 is nondimensional temperature theta. No reference or experimental data is
-generated here; all reference values are loaded from Paper-result CSV files.
+generated here; all reference values are loaded from Literature_results CSV files.
 """
 
 from __future__ import annotations
@@ -21,8 +21,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-DEFAULT_REFERENCE_DIR = Path(
-    r"C:\Users\jblec\Technion\Spring_2026\Machine Learning\Project\Literature_result\mdpi_416_tables"
+DEFAULT_REFERENCE_DIR = (
+    Path(__file__).resolve().parents[2]
+    / "Literature_results"
+    / "mdpi_416_tables"
 )
 
 # Paper cases: eta_i(tau) = exp(-d_i tau).
@@ -373,7 +375,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--reference-dir", type=Path, default=DEFAULT_REFERENCE_DIR,
-        help="Directory containing the Paper-result CSV files.",
+        help="Directory containing the literature-reference CSV files.",
     )
     parser.add_argument("--case", choices=tuple(PAPER_CASES), default="table_1")
     parser.add_argument(

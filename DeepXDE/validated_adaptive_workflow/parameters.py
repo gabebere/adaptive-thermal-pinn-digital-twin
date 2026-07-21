@@ -42,7 +42,9 @@ class WorkflowConfig:
     # Paths and reproducibility.
     output_dir: Path = Path(__file__).resolve().parent / "outputs"
     paper_tables_dir: Path = (
-        Path(__file__).resolve().parents[1] / "paper_result" / "mdpi_416_tables"
+        Path(__file__).resolve().parents[2]
+        / "Literature_results"
+        / "mdpi_416_tables"
     )
     seed: int = 7
 

@@ -47,4 +47,5 @@ def test_combined_latency_configuration_is_reproducible():
     assert cfg.time_instances == 81
     assert cfg.batch_size_n == 1
     assert cfg.observation_window_batches == 4
-    assert cfg.sensor_x == (0.05, 0.5, 0.95)
+    assert cfg.sensor_x == (0.05, 0.275, 0.5, 0.725, 0.95)
+    assert len(cfg.sensor_x) * len(cfg.sensor_y) == 25

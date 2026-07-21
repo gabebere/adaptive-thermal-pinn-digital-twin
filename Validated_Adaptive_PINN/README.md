@@ -60,7 +60,9 @@ python combined_latency_figures.py --profile full
 The study cases are the editable `LATENCY_EXPERIMENTS` rows in
 `parameters.py`. They compare sampling interval, update batch size, sensor
 placement, recent-history length, and data-loss weight while keeping the same
-physical boundary event.
+physical boundary event. The combined low-latency case uses a 5-by-5 grid (25
+sensors) at normalized coordinates `0.05, 0.275, 0.5, 0.725, 0.95` in both
+directions.
 
 ## Online update semantics
 

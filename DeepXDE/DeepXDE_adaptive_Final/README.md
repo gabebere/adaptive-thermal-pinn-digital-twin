@@ -68,3 +68,23 @@ online data policy, not the scientific problem underneath it.
 The PyTorch comparison does not change this workflow from 2D to 1D. It makes
 the replaceable architecture/training choices comparable while preserving the
 same validated 2D equation and reference data.
+
+## Constant-flux PINN/PINO benchmark
+
+The physical engine-wall benchmark and streamed PINO are retained alongside
+the validated 2D workflow, but use a separate architecture document so their
+training budgets cannot overwrite one another:
+
+```powershell
+..\..\.venv\Scripts\python.exe run_constant_flux.py constant_flux_balanced --profile full
+```
+
+`architectures/constant_flux_balanced.toml` defines the offline and adaptive
+PINN architecture, the 8,001-step online adaptation budget, sensor locations,
+loss weights, and collocation counts used by the constant-flux study. The
+report-quality figures, checkpoints, metrics, and held-out cases remain under
+`results/2026-07-22/`.
+
+In short, `run.py balanced` runs the configurable validated 2D PINN, while
+`run_constant_flux.py constant_flux_balanced` runs the physical constant-flux
+PINN/PINO comparison. Both entry points load TOML architecture files.

@@ -1,0 +1,20 @@
+{
+  "description": "Curated report-scale checkpoints; evaluation does not retrain the offline PINN or streamed PINO.",
+  "architecture": "../architectures/balanced.toml",
+  "training_run": "mixed_flux_balanced/full",
+  "models": {
+    "offline_baseline_pinn.pt": {
+      "sha256": "b34256ed05bdc7948df15fbde4457c6ad2b3ab2c856dc3fcab7b2aabda6d8281",
+      "role": "Physics-only DeepXDE warm start trained at 4.0 MW/m2"
+    },
+    "adaptive_balanced_pinn.pt": {
+      "sha256": "8fb0b21330577553b1a270c9645891b406c1253e16c6c68383e876cd48b49087",
+      "role": "Locked-case adaptive posterior; new cases start from offline_baseline_pinn.pt and adapt only online"
+    },
+    "streamed_pino.pt": {
+      "sha256": "a88f8b960a368167d3e5e505e867273e3f151aa50671b9827bc7bcd27a3c01c0",
+      "role": "Best mixed-boundary streamed PINO checkpoint selected at epoch 350",
+      "locked_case_rmse_k": 0.24564185738563538
+    }
+  }
+}

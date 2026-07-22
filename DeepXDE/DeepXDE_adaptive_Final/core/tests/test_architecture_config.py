@@ -18,7 +18,7 @@ def test_balanced_architecture_document_matches_maintained_configuration():
     assert cfg.batch_size_n == 2
     assert cfg.sensor_x == (0.05, 0.5, 0.95)
     assert cfg.observation_window_batches == 2
-    assert cfg.adaptive_iterations_per_batch == 381
+    assert cfg.adaptive_iterations_per_batch == 100
     assert cfg.initializer == "Glorot normal"
 
 

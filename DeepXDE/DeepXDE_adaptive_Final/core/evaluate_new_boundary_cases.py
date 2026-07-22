@@ -711,7 +711,7 @@ def main():
         "--output-dir", type=Path, default=ROOT / "outputs" / "new_boundary_cases"
     )
     args = parser.parse_args()
-    architecture = ROOT / "architectures" / "balanced.toml"
+    architecture = ROOT / "architectures" / "constant_flux_balanced.toml"
     cfg = load_balanced_config(architecture, "full")
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # Curated, Git-tracked checkpoints make evaluation independent of ignored

@@ -1,4 +1,4 @@
-"""Run the validated 2D adaptive DeepXDE PINN from one TOML preset."""
+"""Run the paper check plus physical constant-flux PINN/PINO benchmark."""
 
 from __future__ import annotations
 
@@ -9,7 +9,7 @@ import sys
 
 
 HERE = Path(__file__).resolve().parent
-WORKFLOW = HERE / "core" / "run_workflow.py"
+WORKFLOW = HERE / "core" / "run_constant_flux_workflow.py"
 ARCHITECTURES = HERE / "architectures"
 
 
@@ -32,8 +32,11 @@ def main() -> None:
     parser.add_argument(
         "architecture",
         nargs="?",
-        default="balanced",
-        help="preset name or path to a TOML architecture file (default: balanced)",
+        default="constant_flux_balanced",
+        help=(
+            "preset name or path to a TOML architecture file "
+            "(default: constant_flux_balanced)"
+        ),
     )
     parser.add_argument("--profile", choices=("smoke", "full"), default="full")
     parser.add_argument("--output-dir", type=Path, default=HERE / "outputs")

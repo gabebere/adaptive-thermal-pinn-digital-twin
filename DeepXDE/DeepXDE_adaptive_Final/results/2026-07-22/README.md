@@ -7,7 +7,7 @@ are intentionally excluded.
 ## Source and trained models
 
 - Maintained implementation: `../../core/`
-- Architecture configuration: `../../architectures/balanced.toml`
+- Architecture configuration: `../../architectures/constant_flux_balanced.toml`
 - Reusable trained weights and SHA-256 manifest: `../../checkpoints/`
 - Source revision before this results snapshot: `19483e8`
 

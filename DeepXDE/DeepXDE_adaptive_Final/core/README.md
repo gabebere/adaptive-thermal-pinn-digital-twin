@@ -98,7 +98,7 @@ python run_workflow.py --profile full --adaptive-profile low_latency
 The same engine can also load a strict external architecture document:
 
 ```powershell
-python run_workflow.py --profile full --architecture-file ..\architectures\balanced.toml
+python run_constant_flux_workflow.py --profile full --architecture-file ..\architectures\constant_flux_balanced.toml
 ```
 
 `low_latency` samples twice as often, updates after every time instance, uses

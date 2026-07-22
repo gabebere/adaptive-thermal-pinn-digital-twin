@@ -1,90 +1,90 @@
-# Constant-flux adaptive PINN / streamed PINO benchmark
+# DeepXDE adaptive final
 
-This is the maintained entry point for the physical engine-wall comparison.
-It runs the exact folder linked on GitHub; the DeepXDE code has not been copied
-into a separate DeepONet working folder.
+This is the user-facing entry point for the maintained 2D adaptive PINN. It
+does not contain multiple copies of the PINN. `run.py` calls the single tested
+implementation in `core/`, while each TOML document
+in `architectures/` supplies a different set of replaceable design choices.
 
-## Physical problem
+## Run a preset
 
-The learned models solve a one-dimensional wall of thickness `L=5 mm`:
-
-```text
-T_t = alpha T_xx
--k T_x(0,t) = q_hot(t)                  (constant engine-side heat flux)
--k T_x(L,t) = h [T(L,t) - T_coolant]    (convective coolant side)
-T(x,0) = T_coolant = 300 K
-```
-
-The locked test applies `4.0 MW/m²` up to `t=0.5 s` and `5.2 MW/m²`
-afterward. The flux does not decay. Temperature is continuous at the switch.
-The reference is an exact Robin-eigenfunction series; the switched response is
-constructed by causal step-response superposition, rather than by splicing two
-independent temperature histories.
-
-The workflow also reruns the original dimensionless 2-D paper-series check
-against its published tables. That check is kept separate because the paper's
-2-D Dirichlet problem and this physical 1-D Neumann/Robin wall are different
-PDE boundary-value problems; their errors must never be mixed.
-
-## Models compared
-
-- **Offline baseline PINN:** a DeepXDE FNN trained once using the pre-switch
-  `4.0 MW/m²` boundary condition. It receives no streamed observations.
-- **Adaptive balanced PINN:** the same DeepXDE FNN warm-started from the
-  offline weights, then updated in two-sample batches from three sensor streams
-  and the known flux history (retaining the two latest batches). The balanced preset uses 21 updates ×
-  381 iterations = 8,001 adaptive optimization steps.
-- **Streamed PINO:** a GRU observer consumes the current three temperatures,
-  hot-side flux, flux increment, time, and sample interval. Its state conditions
-  a Fourier-feature spatial decoder. Training uses 500 epochs and combines exact
-  CSV field supervision (weighted around boundary events) with heat-equation and
-  boundary residual losses; deployment performs one forward state update without
-  online gradient descent. Validation selected epoch 350 from the full run.
-
-## Reproduce the full run
-
-From this directory:
+From this folder, using the repository virtual environment:
 
 ```powershell
-& '..\..\..\.conda\python.exe' run.py balanced --profile full --output-dir outputs
+..\..\.venv\Scripts\python.exe run.py balanced --profile full
 ```
 
-Use `--profile smoke` only to check wiring. It deliberately has too little
-training to be used as a performance result.
+Quick wiring check (reduced iterations and collocation points):
 
-The improved deterministic analytical corpus is stored in `data/mixed_flux_v2/`.
-It contains 600 training, 100 validation, 200 held-out interpolation, and one
-locked switch scenario as CSV files. Event times and jump magnitudes are
-stratified, increases and decreases are balanced, and 30% of the cases relax
-exponentially after the event while 70% remain non-decaying steps. The manifest,
-checksums, and exact generation configuration let another model use identical
-data. The locked comparison remains the physical non-decaying 4.0 to 5.2 MW/m²
-case, so extra generality cannot hide a regression on the target problem.
+```powershell
+..\..\.venv\Scripts\python.exe run.py balanced --profile smoke
+```
 
-The report-quality results are in
-`outputs/mixed_flux_balanced/full/`, including:
+Other maintained choices:
 
-- `graphs/00a_paper_analytical_validation.png`;
-- `graphs/00b_physical_analytical_solution.png`;
-- `graphs/00c_training_corpus_coverage.png`;
-- `graphs/01_balanced_adaptive_vs_baseline_error.png`;
-- `graphs/02_all_models_temperature_values.png`;
-- `graphs/03_adaptive_pinn_vs_streamed_pino_error.png`;
-- `graphs/04_pino_before_after_improvement.png`;
-- `metrics.json`, `rmse_by_time.csv`, model checkpoints, and the complete
-  point-by-point prediction arrays.
+```powershell
+..\..\.venv\Scripts\python.exe run.py low_latency --profile full
+..\..\.venv\Scripts\python.exe run.py pytorch_comparison --profile full
+```
 
-## Reuse without retraining
+You may also supply a file path:
 
-The small, curated model files in `checkpoints/` are intentionally tracked in
-Git even though ordinary `.pt` files and generated `outputs/` are ignored. The
-checkpoint manifest records their hashes and roles. New evaluations load the
-offline PINN and streamed PINO directly; only the adaptive PINN's defining
-online sensor-update phase is rerun for each new boundary history.
+```powershell
+..\..\.venv\Scripts\python.exe run.py architectures\my_experiment.toml --profile full
+```
 
-## Published result snapshot
+Outputs are written below `outputs/` unless `--output-dir` is supplied. Every
+run copies its exact TOML input to `architecture_used.toml` beside the metrics,
+and the metrics JSON records the resolved architecture and training values.
 
-The report-quality graphs, metrics, point-by-point predictions, and packaged
-held-out test data from this study are versioned under `results/2026-07-22/`.
-Its README documents the cases, model provenance, boundary conditions, archive
-checksum, and headline RMSE values.
+## Change the architecture without copying the PINN
+
+Copy one TOML document inside `architectures/`, give it a descriptive name,
+and edit only that document. The accepted settings are:
+
+- `[network]`: hidden-layer widths, activation, and weight initializer;
+- `[training]`: offline/adaptive iterations, both learning rates, sensor-data
+  and physics/data loss weights, plus PDE/boundary/initial collocation counts;
+- `[streaming]`: sample spacing, update batch size, sensor coordinates, and
+  recent observation-window length.
+
+The loader is strict: unknown sections and misspelled setting names stop the
+run with an error instead of being silently ignored. Omit
+`observation_window_batches` to retain all observations.
+
+The physical PDE, analytical Table 1 reference, unexpected boundary event,
+and plotting code stay centralized in `core/`. This
+keeps comparisons fair: an architecture document changes the model and its
+online data policy, not the scientific problem underneath it.
+
+## Included documents
+
+- `balanced.toml`: the recommended compute/latency compromise and default;
+- `low_latency.toml`: denser data and immediate updates, with much higher
+  online cost;
+- `pytorch_comparison.toml`: matches the standalone PyTorch model's 48x3 tanh
+  network, Xavier/Glorot-uniform initialization, learning rates, training
+  budget, collocation counts, and analogous sensor policy.
+
+The PyTorch comparison does not change this workflow from 2D to 1D. It makes
+the replaceable architecture/training choices comparable while preserving the
+same validated 2D equation and reference data.
+
+## Constant-flux PINN/PINO benchmark
+
+The physical engine-wall benchmark and streamed PINO are retained alongside
+the validated 2D workflow, but use a separate architecture document so their
+training budgets cannot overwrite one another:
+
+```powershell
+..\..\.venv\Scripts\python.exe run_constant_flux.py constant_flux_balanced --profile full
+```
+
+`architectures/constant_flux_balanced.toml` defines the offline and adaptive
+PINN architecture, the 8,001-step online adaptation budget, sensor locations,
+loss weights, and collocation counts used by the constant-flux study. The
+report-quality figures, checkpoints, metrics, and held-out cases remain under
+`results/2026-07-22/`.
+
+In short, `run.py balanced` runs the configurable validated 2D PINN, while
+`run_constant_flux.py constant_flux_balanced` runs the physical constant-flux
+PINN/PINO comparison. Both entry points load TOML architecture files.

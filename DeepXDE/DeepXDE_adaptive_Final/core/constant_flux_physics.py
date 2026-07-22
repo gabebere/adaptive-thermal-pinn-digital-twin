@@ -101,6 +101,7 @@ def load_balanced_config(path: Path, profile: str) -> ConstantFluxConfig:
     network = document.get("network", {})
     training = document.get("training", {})
     streaming = document.get("streaming", {})
+    operator = document.get("operator", {})
     sample_spacing = float(streaming.get("sample_spacing_tau", 2.5)) / 100.0
     replacements = {
         "hidden_layers": tuple(network.get("hidden_layers", (48, 48, 48))),
@@ -123,6 +124,18 @@ def load_balanced_config(path: Path, profile: str) -> ConstantFluxConfig:
         "batch_size_n": int(streaming.get("batch_size_n", 2)),
         "sensor_x_hat": tuple(streaming.get("sensor_x", (0.05, 0.5, 0.95))),
         "observation_window_batches": streaming.get("observation_window_batches", None),
+        "operator_hidden": int(operator.get("hidden_width", 128)),
+        "operator_basis": int(operator.get("basis_width", 96)),
+        "operator_epochs": int(operator.get("epochs", 500)),
+        "operator_batch_size": int(operator.get("batch_size", 16)),
+        "operator_learning_rate": float(operator.get("learning_rate", 8.0e-4)),
+        "operator_pde_weight": float(operator.get("pde_loss_weight", 5.0e-3)),
+        "operator_boundary_weight": float(
+            operator.get("boundary_loss_weight", 5.0e-2)
+        ),
+        "operator_transition_weight": float(
+            operator.get("transition_loss_weight", 3.0)
+        ),
     }
     cfg = replace(ConstantFluxConfig(), **replacements)
     if profile == "smoke":

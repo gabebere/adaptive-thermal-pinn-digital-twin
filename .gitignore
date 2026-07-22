@@ -6,3 +6,6 @@ __pycache__/
 outputs/
 reports/**/build/
 *.pt
+DeepXDE/DeepXDE_adaptive_Final/data/
+!DeepXDE/DeepXDE_adaptive_Final/checkpoints/
+!DeepXDE/DeepXDE_adaptive_Final/checkpoints/*.pt

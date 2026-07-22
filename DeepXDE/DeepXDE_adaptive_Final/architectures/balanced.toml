@@ -1,0 +1,29 @@
+[profile]
+name = "balanced"
+description = "Balanced offline/adaptive architecture for the physical constant-flux wall benchmark."
+
+[network]
+hidden_layers = [48, 48, 48]
+activation = "tanh"
+initializer = "Glorot normal"
+
+[training]
+baseline_iterations = 2500
+# 21 causal updates x 381 iterations = 8,001 total adaptive steps.
+adaptive_iterations_per_batch = 381
+baseline_learning_rate = 1.0e-3
+adaptive_learning_rate = 3.0e-4
+pde_loss_weight = 1.0
+boundary_loss_weight = 1.0
+initial_loss_weight = 1.0
+data_loss_weight = 10.0
+num_domain = 1800
+num_boundary = 400
+num_initial = 300
+
+[streaming]
+sample_spacing_tau = 2.5
+batch_size_n = 2
+sensor_x = [0.05, 0.5, 0.95]
+sensor_y = [0.05, 0.5, 0.95]
+observation_window_batches = 2

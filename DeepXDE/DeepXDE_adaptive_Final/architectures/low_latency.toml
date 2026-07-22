@@ -1,0 +1,28 @@
+[profile]
+name = "low_latency"
+description = "Faster event response at substantially higher online compute cost."
+
+[network]
+hidden_layers = [48, 48, 48]
+activation = "tanh"
+initializer = "Glorot normal"
+
+[training]
+baseline_iterations = 2500
+adaptive_iterations_per_batch = 100
+baseline_learning_rate = 1.0e-3
+adaptive_learning_rate = 3.0e-4
+pde_loss_weight = 1.0
+boundary_loss_weight = 1.0
+initial_loss_weight = 1.0
+data_loss_weight = 20.0
+num_domain = 1800
+num_boundary = 400
+num_initial = 300
+
+[streaming]
+sample_spacing_tau = 1.25
+batch_size_n = 1
+sensor_x = [0.05, 0.275, 0.5, 0.725, 0.95]
+sensor_y = [0.05, 0.275, 0.5, 0.725, 0.95]
+observation_window_batches = 4

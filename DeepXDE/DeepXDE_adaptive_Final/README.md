@@ -81,3 +81,10 @@ Git even though ordinary `.pt` files and generated `outputs/` are ignored. The
 checkpoint manifest records their hashes and roles. New evaluations load the
 offline PINN and streamed PINO directly; only the adaptive PINN's defining
 online sensor-update phase is rerun for each new boundary history.
+
+## Published result snapshot
+
+The report-quality graphs, metrics, point-by-point predictions, and packaged
+held-out test data from this study are versioned under `results/2026-07-22/`.
+Its README documents the cases, model provenance, boundary conditions, archive
+checksum, and headline RMSE values.

@@ -1,0 +1,123 @@
+{
+  "problem": {
+    "description": "1-D wall, constant hot-side flux, convective coolant face",
+    "locked_test": "4.0 to 5.2 MW/m2 at t=0.5 s",
+    "analytical_reference": "Robin eigenfunction expansion with switched-step superposition",
+    "paper_reference_scope": "separate 2-D dimensionless literature implementation validation"
+  },
+  "device": "cuda",
+  "configuration": {
+    "seed": 8128,
+    "wall_thickness_m": 0.005,
+    "conductivity_w_mk": 385.0,
+    "density_kg_m3": 8960.0,
+    "heat_capacity_j_kgk": 385.0,
+    "coolant_h_w_m2k": 25000.0,
+    "coolant_temperature_k": 300.0,
+    "initial_temperature_k": 300.0,
+    "final_time_s": 1.0,
+    "q_min_w_m2": 2800000.0,
+    "q_max_w_m2": 5200000.0,
+    "baseline_flux_w_m2": 4000000.0,
+    "switched_flux_w_m2": 5200000.0,
+    "switch_time_s": 0.5,
+    "field_points": 81,
+    "time_instances": 41,
+    "series_terms": 80,
+    "train_scenarios": 200,
+    "validation_scenarios": 40,
+    "test_scenarios": 100,
+    "sensor_x_hat": [
+      0.05,
+      0.5,
+      0.95
+    ],
+    "hidden_layers": [
+      48,
+      48,
+      48
+    ],
+    "activation": "tanh",
+    "initializer": "Glorot normal",
+    "baseline_iterations": 2500,
+    "adaptive_iterations_per_batch": 381,
+    "baseline_learning_rate": 0.001,
+    "adaptive_learning_rate": 0.0003,
+    "pde_loss_weight": 1.0,
+    "boundary_loss_weight": 1.0,
+    "initial_loss_weight": 1.0,
+    "data_loss_weight": 10.0,
+    "num_domain": 1800,
+    "num_boundary": 400,
+    "num_initial": 300,
+    "batch_size_n": 2,
+    "observation_window_batches": 2,
+    "operator_hidden": 96,
+    "operator_basis": 64,
+    "operator_epochs": 140,
+    "operator_batch_size": 16,
+    "operator_learning_rate": 0.0008
+  },
+  "paper_validation": {
+    "table_1": {
+      "boundary_set": "set_1",
+      "published_rmse": 0.00025622561637372274,
+      "paper_equation_csv_rmse": 2.1519090095816043e-05,
+      "max_abs_published_error": 0.000423203430223687
+    },
+    "table_2": {
+      "boundary_set": "set_2",
+      "published_rmse": 0.04835285249493577,
+      "paper_equation_csv_rmse": 1.9458418102722324e-05,
+      "max_abs_published_error": 0.062287570876870105
+    },
+    "table_3": {
+      "boundary_set": "set_3",
+      "published_rmse": 0.10463875315400804,
+      "paper_equation_csv_rmse": 1.7085374688402128e-05,
+      "max_abs_published_error": 0.13653901094611803
+    }
+  },
+  "physical_analytical_checks": {
+    "initial_max_abs_error_k": 0.0,
+    "one_second_to_steady_max_abs_k": 53.03619780096011,
+    "steady_hot_temperature_k": 511.94805194805195,
+    "steady_cool_temperature_k": 460.0,
+    "biot": 0.3246753246753247,
+    "fourier_beta": 4.4642857142857135
+  },
+  "offline_baseline_pinn": {
+    "overall_rmse_k": 18.65508270263672,
+    "pre_switch_rmse_k": 11.989767074584961,
+    "post_switch_rmse_k": 23.29255485534668,
+    "switch_time_rmse_k": 9.29659366607666,
+    "maximum_time_rmse_k": 30.855121612548828
+  },
+  "adaptive_balanced_pinn": {
+    "overall_rmse_k": 2.038363882213972,
+    "pre_switch_rmse_k": 2.8880563890722346,
+    "post_switch_rmse_k": 0.4102627404174741,
+    "switch_time_rmse_k": 1.0666578688612862,
+    "maximum_time_rmse_k": 7.415660136468287,
+    "median_update_latency_ms": 2392.7945000032196,
+    "p99_update_latency_ms": 2602.1588400093606
+  },
+  "streamed_pino": {
+    "overall_rmse_k": 0.5592116713523865,
+    "pre_switch_rmse_k": 0.5418005585670471,
+    "post_switch_rmse_k": 0.5753040313720703,
+    "switch_time_rmse_k": 1.5830659866333008,
+    "maximum_time_rmse_k": 2.0619285106658936,
+    "locked_rmse_k": 0.5592116713523865,
+    "interpolation_mean_rmse_k": 0.5491967797279358,
+    "interpolation_std_rmse_k": 0.1391327977180481,
+    "median_latency_ms": 0.7514000026276335,
+    "p99_latency_ms": 1.0887599928537386,
+    "validation_rmse_k": 0.5482927560806274
+  },
+  "paths": {
+    "csv_corpus": "C:\\Users\\jblec\\Technion\\Spring_2026\\Machine Learning\\Project\\adaptive-thermal-pinn-digital-twin\\DeepXDE\\DeepXDE_adaptive_Final\\data\\constant_flux_v1",
+    "architecture": "C:\\Users\\jblec\\Technion\\Spring_2026\\Machine Learning\\Project\\adaptive-thermal-pinn-digital-twin\\DeepXDE\\DeepXDE_adaptive_Final\\architectures\\balanced.toml",
+    "graphs": "C:\\Users\\jblec\\Technion\\Spring_2026\\Machine Learning\\Project\\adaptive-thermal-pinn-digital-twin\\DeepXDE\\DeepXDE_adaptive_Final\\outputs\\constant_flux_balanced\\full\\graphs"
+  }
+}

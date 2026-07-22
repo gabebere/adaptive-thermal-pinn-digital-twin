@@ -1,0 +1,55 @@
+{
+  "seed": 20260722,
+  "device": "cuda",
+  "checkpoint_directory": "C:\\Users\\jblec\\Technion\\Spring_2026\\Machine Learning\\Project\\adaptive-thermal-pinn-digital-twin\\DeepXDE\\DeepXDE_adaptive_Final\\checkpoints",
+  "tau_mapping": "tau=100*t/final_time; physical model interval t=[0,1] s",
+  "cases": {
+    "no_break": {
+      "specification": {
+        "q_before_w_m2": 4596105.252678417,
+        "q_after_w_m2": 4596105.252678417,
+        "switch_time_s": null
+      },
+      "offline_pinn": {
+        "overall_rmse_k": 22.20804214477539,
+        "maximum_time_rmse_k": 25.484357833862305
+      },
+      "adaptive_pinn": {
+        "overall_rmse_k": 2.2858862525870074,
+        "maximum_time_rmse_k": 8.391830180939902,
+        "median_update_latency_ms": 2401.728600001661
+      },
+      "streamed_pino": {
+        "overall_rmse_k": 0.22576694190502167,
+        "maximum_time_rmse_k": 0.9843155741691589
+      }
+    },
+    "random_break": {
+      "specification": {
+        "q_before_w_m2": 4301883.191208312,
+        "q_after_w_m2": 5189344.260278553,
+        "switch_time_s": 0.53,
+        "switch_tau": 53
+      },
+      "offline_pinn": {
+        "overall_rmse_k": 21.960451126098633,
+        "maximum_time_rmse_k": 33.26273727416992,
+        "pre_switch_rmse_k": 15.682449340820312,
+        "post_switch_rmse_k": 27.493593215942383
+      },
+      "adaptive_pinn": {
+        "overall_rmse_k": 2.1802837305661478,
+        "maximum_time_rmse_k": 7.960839122578401,
+        "pre_switch_rmse_k": 2.9663832313936442,
+        "post_switch_rmse_k": 0.2627460767170885,
+        "median_update_latency_ms": 2262.8458000108367
+      },
+      "streamed_pino": {
+        "overall_rmse_k": 0.22610417008399963,
+        "maximum_time_rmse_k": 0.8835092782974243,
+        "pre_switch_rmse_k": 0.25382497906684875,
+        "post_switch_rmse_k": 0.18899321556091309
+      }
+    }
+  }
+}

@@ -1,16 +1,13 @@
-# DeepXDE models and results
+# DeepXDE
 
-This folder owns all DeepXDE code, tests, and model-generated results in the
-repository. The independent analytical literature reproduction and its
-reference datasets live in `../Literature_results/`.
+`DeepXDE_adaptive_Final/` is the maintained 2D adaptive PINN. It contains one
+tested core implementation, interchangeable TOML architecture documents, a
+simple launcher, and its generated outputs.
 
-## Workflows
+Start with `DeepXDE_adaptive_Final/README.md` and run the balanced architecture
+through `DeepXDE_adaptive_Final/run.py`.
 
-- `paper_data_model/` is the compact DeepXDE model that assimilates the
-  literature paper's center-point reference values in sequential batches.
-- `validated_adaptive_workflow/` is the larger full-field workflow containing
-  analytical validation, offline PINN training, streaming adaptation,
-  boundary-change experiments, and latency studies.
-
-Each workflow has its own README, requirements, and results directory. Keep
-new PINN outputs beside the workflow that generated them.
+Older superseded experiments are retained under `archive/` for provenance.
+They are not part of the maintained workflow. Independent analytical
+literature reproduction and reference datasets remain in
+`../Literature_results/`.

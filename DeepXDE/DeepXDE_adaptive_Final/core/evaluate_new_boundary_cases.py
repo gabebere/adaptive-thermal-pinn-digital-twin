@@ -11,6 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
 import numpy as np
 import torch
 
@@ -164,6 +165,53 @@ def _temperature_plot(
     plt.close(fig)
 
 
+def _gradient_temperature_plot(
+    path: Path,
+    title: str,
+    arrays: dict,
+    predictions: dict[str, np.ndarray],
+    switch_time: float | None,
+):
+    """Show the full temperature evolution with a shared tau color gradient."""
+    fig, axes = plt.subplots(
+        2, 2, figsize=(13.5, 9.0), sharex=True, sharey=True, layout="constrained"
+    )
+    tau = arrays["times"] * 100.0
+    # Nine curves keep the evolution readable while covering the full horizon.
+    indices = np.unique(np.linspace(0, len(tau) - 1, 9, dtype=int))
+    norm = Normalize(vmin=float(tau.min()), vmax=float(tau.max()))
+    cmap = plt.get_cmap("turbo")
+    for ax, (label, field) in zip(axes.flat, predictions.items()):
+        for index in indices:
+            ax.plot(
+                arrays["x_hat"],
+                field[index],
+                color=cmap(norm(tau[index])),
+                linewidth=1.8,
+            )
+        ax.set_title(label)
+        ax.grid(alpha=0.22)
+    for ax in axes[-1]:
+        ax.set_xlabel("x/L")
+    for ax in axes[:, 0]:
+        ax.set_ylabel("Temperature (K)")
+    scalar = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
+    colorbar = fig.colorbar(
+        scalar, ax=axes.ravel().tolist(), location="right", shrink=0.90, pad=0.02
+    )
+    colorbar.set_label("tau (dashed marker = boundary break)" if switch_time is not None else "tau")
+    if switch_time is not None:
+        colorbar.ax.axhline(
+            switch_time * 100.0,
+            color="black",
+            linestyle="--",
+            linewidth=2,
+        )
+    fig.suptitle(title)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
 def _rmse_plot(
     path: Path,
     title: str,
@@ -198,6 +246,45 @@ def _rmse_plot(
     )
     ax.grid(alpha=0.25, which="both")
     ax.legend()
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def _dual_rmse_plot(
+    path: Path,
+    title: str,
+    arrays: dict,
+    predictions: dict[str, np.ndarray],
+    switch_time: float | None,
+):
+    """Put linear context and logarithmic small-error detail in one figure."""
+    fig, axes = plt.subplots(1, 2, figsize=(14.5, 5.3), sharex=True, layout="constrained")
+    colors = {
+        "offline PINN": "tab:orange",
+        "adaptive PINN": "tab:blue",
+        "streamed PINO": "tab:green",
+    }
+    tau = arrays["times"] * 100.0
+    for ax, logarithmic in zip(axes, (False, True)):
+        for label, field in predictions.items():
+            error = _rmse_by_time(arrays["truth"], field)
+            plot = ax.semilogy if logarithmic else ax.plot
+            plot(tau[1:], error[1:], label=label, color=colors[label], linewidth=2)
+        if switch_time is not None:
+            ax.axvline(
+                switch_time * 100.0,
+                color="black",
+                linestyle="--",
+                label=f"boundary break at tau={switch_time * 100.0:.1f}",
+            )
+        ax.set(
+            title="Logarithmic detail" if logarithmic else "Linear overview",
+            xlabel="tau",
+            ylabel="Whole-wall RMSE vs analytical (K)",
+        )
+        ax.grid(alpha=0.25, which="both")
+    axes[0].legend(loc="best", frameon=True)
+    fig.suptitle(title)
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
@@ -263,16 +350,16 @@ def evaluate_case(
         },
         switch_time,
     )
-    _rmse_plot(
+    _dual_rmse_plot(
         case_dir / "02_adaptive_offline_rmse.png",
         f"Adaptive and offline errors: {condition}",
         arrays,
         {"offline PINN": offline_prediction, "adaptive PINN": adaptive.prediction},
         switch_time,
     )
-    _temperature_plot(
+    _gradient_temperature_plot(
         case_dir / "03_all_models_temperature.png",
-        f"All models vs analytical: {condition}",
+        f"Temperature evolution by model: {condition}",
         arrays,
         {
             "analytical": analytical,
@@ -282,7 +369,7 @@ def evaluate_case(
         },
         switch_time,
     )
-    _rmse_plot(
+    _dual_rmse_plot(
         case_dir / "04_all_models_rmse.png",
         f"All model errors: {condition}",
         arrays,
@@ -292,7 +379,6 @@ def evaluate_case(
             "streamed PINO": pino_prediction,
         },
         switch_time,
-        logarithmic=False,
     )
     np.savez_compressed(
         case_dir / "predictions.npz",
@@ -317,6 +403,52 @@ def evaluate_case(
             analytical, pino_prediction, arrays["times"], switch_time
         ),
     }
+
+
+def regenerate_saved_comparison_plots(
+    case_dir: Path, condition: str, switch_time: float | None
+) -> None:
+    """Rebuild Graphs 02–04 from saved arrays without running any model."""
+    saved = np.load(case_dir / "predictions.npz")
+    arrays = {
+        "times": saved["tau"] / 100.0,
+        "x_hat": saved["x_hat"],
+        "truth": saved["analytical_temperature_k"],
+    }
+    offline = saved["offline_pinn_temperature_k"]
+    adaptive = saved["adaptive_pinn_temperature_k"]
+    pino = saved["streamed_pino_temperature_k"]
+    _dual_rmse_plot(
+        case_dir / "02_adaptive_offline_rmse.png",
+        f"Adaptive and offline errors: {condition}",
+        arrays,
+        {"offline PINN": offline, "adaptive PINN": adaptive},
+        switch_time,
+    )
+    _gradient_temperature_plot(
+        case_dir / "03_all_models_temperature.png",
+        f"Temperature evolution by model: {condition}",
+        arrays,
+        {
+            "analytical": arrays["truth"],
+            "offline PINN": offline,
+            "adaptive PINN": adaptive,
+            "streamed PINO": pino,
+        },
+        switch_time,
+    )
+    all_models = {
+        "offline PINN": offline,
+        "adaptive PINN": adaptive,
+        "streamed PINO": pino,
+    }
+    _dual_rmse_plot(
+        case_dir / "04_all_models_rmse.png",
+        f"All model errors: {condition}",
+        arrays,
+        all_models,
+        switch_time,
+    )
 
 
 def main():

@@ -18,7 +18,8 @@ each case.
 
 ## Graphs
 
-The `graphs/` folder contains 22 full-resolution figures:
+The `graphs/` folder contains 22 combined full-resolution figures plus 34
+standalone panels:
 
 - `01_original_constant_flux/`: the first constant-flux analytical, offline,
   adaptive, and streamed-PINO comparison;
@@ -35,6 +36,10 @@ linear overview beside a logarithmic detail view in the same figure. Graph 03
 uses four model panels and a shared tau color gradient to show the full
 temperature evolution. Graph 05 reports absolute error fields on a shared
 logarithmic scale and pairwise error reductions on a shared diverging scale.
+Each new-case directory also contains `individual_figures/`, where every panel
+from Graphs 01–05 is exported as its own figure. The `01a`–`05f` filename
+prefixes preserve the relationship to the corresponding combined figure while
+allowing individual selection for papers and presentations.
 
 ## Headline RMSE
 

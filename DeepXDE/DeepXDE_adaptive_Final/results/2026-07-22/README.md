@@ -18,21 +18,23 @@ each case.
 
 ## Graphs
 
-The `graphs/` folder contains 20 full-resolution figures:
+The `graphs/` folder contains 22 full-resolution figures:
 
 - `01_original_constant_flux/`: the first constant-flux analytical, offline,
   adaptive, and streamed-PINO comparison;
 - `02_improved_mixed_flux/`: the improved PINO, stratified training coverage,
   paper/physical analytical checks, error fields, and before/after comparison;
-- `03_new_cases/no_break/`: four temperature/RMSE plots for the unseen constant
+- `03_new_cases/no_break/`: five temperature/RMSE/error-field plots for the unseen constant
   4.596 MW/m² case;
-- `03_new_cases/random_break/`: four temperature/RMSE plots for the unseen
+- `03_new_cases/random_break/`: five temperature/RMSE/error-field plots for the unseen
   4.302→5.189 MW/m² case with a random break at tau=53.
 
-For both new cases, Graphs 02 and 04 place a linear overview beside a
-logarithmic detail view in the same figure. Graph 03 uses four model panels and
-a shared tau color gradient to show the complete temperature evolution without
-repeating a grid of nearly identical time-slice panels.
+For both new cases, Graph 01 shows analytical, offline-PINN, and adaptive-PINN
+space-time temperature fields on one shared scale. Graphs 02 and 04 place a
+linear overview beside a logarithmic detail view in the same figure. Graph 03
+uses four model panels and a shared tau color gradient to show the full
+temperature evolution. Graph 05 reports absolute error fields on a shared
+logarithmic scale and pairwise error reductions on a shared diverging scale.
 
 ## Headline RMSE
 

@@ -11,7 +11,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from matplotlib.colors import Normalize
+from matplotlib.colors import LogNorm, Normalize, TwoSlopeNorm
 import numpy as np
 import torch
 
@@ -28,6 +28,26 @@ from physical_streamed_pino import (
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parent
+WALL_THICKNESS_MM = 5.0
+MODEL_COLORS = {
+    "analytical": "#111111",
+    "offline PINN": "#D55E00",
+    "adaptive PINN": "#0072B2",
+    "streamed PINO": "#009E73",
+}
+
+plt.rcParams.update(
+    {
+        "font.family": "serif",
+        "mathtext.fontset": "stix",
+        "axes.titlesize": 11,
+        "axes.labelsize": 10,
+        "legend.fontsize": 9,
+        "xtick.direction": "in",
+        "ytick.direction": "in",
+        "axes.linewidth": 0.8,
+    }
+)
 
 
 def _load_checkpoints(cfg, model_dir: Path, device: torch.device):
@@ -133,34 +153,35 @@ def _profile_indices(times, switch_time):
     return [int(np.argmin(np.abs(tau - value))) for value in requested]
 
 
-def _temperature_plot(
+def _temperature_field_plot(
     path: Path,
     title: str,
     arrays: dict,
     predictions: dict[str, np.ndarray],
     switch_time: float | None,
 ):
-    indices = _profile_indices(arrays["times"], switch_time)
-    fig, axes = plt.subplots(2, 3, figsize=(15.5, 8.4), sharex=True, sharey=True)
-    styles = {
-        "analytical": {"color": "black", "linewidth": 2.4},
-        "offline PINN": {"color": "tab:orange", "linestyle": "--"},
-        "adaptive PINN": {"color": "tab:blue"},
-        "streamed PINO": {"color": "tab:green"},
+    fig, axes = plt.subplots(1, 3, figsize=(14.2, 4.5), sharex=True, sharey=True,
+                             layout="constrained")
+    extent = (0.0, WALL_THICKNESS_MM, 0.0, 100.0)
+    vmin = min(float(np.min(field)) for field in predictions.values())
+    vmax = max(float(np.max(field)) for field in predictions.values())
+    display_names = {
+        "analytical": "Analytical reference",
+        "offline PINN": "Offline PINN",
+        "adaptive PINN": "Sensor-adaptive PINN",
     }
-    for ax, index in zip(axes.flat, indices):
-        for label, field in predictions.items():
-            ax.plot(arrays["x_hat"], field[index], label=label, **styles[label])
-        ax.set_title(f"tau = {arrays['times'][index] * 100.0:.1f}")
-        ax.grid(alpha=0.25)
-    for ax in axes[-1]:
-        ax.set_xlabel("x/L")
-    for ax in axes[:, 0]:
-        ax.set_ylabel("Temperature (K)")
-    handles, labels = axes.flat[0].get_legend_handles_labels()
-    fig.legend(handles, labels, loc="lower center", ncol=len(labels))
-    fig.suptitle(title)
-    fig.tight_layout(rect=(0, 0.07, 1, 0.95))
+    image = None
+    for ax, (label, field) in zip(axes, predictions.items()):
+        image = ax.imshow(field, origin="lower", aspect="auto", extent=extent,
+                          cmap="inferno", vmin=vmin, vmax=vmax)
+        ax.set_title(display_names[label])
+        ax.set_xlabel(r"Wall coordinate, $x$ (mm)")
+        if switch_time is not None:
+            ax.axhline(switch_time * 100.0, color="cyan", linestyle="--", linewidth=1.4)
+    axes[0].set_ylabel(r"Dimensionless time, $\tau$")
+    colorbar = fig.colorbar(image, ax=axes, pad=0.015)
+    colorbar.set_label(r"Temperature, $T$ (K)")
+    fig.suptitle(title, fontsize=13)
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
@@ -181,25 +202,32 @@ def _gradient_temperature_plot(
     indices = np.unique(np.linspace(0, len(tau) - 1, 9, dtype=int))
     norm = Normalize(vmin=float(tau.min()), vmax=float(tau.max()))
     cmap = plt.get_cmap("turbo")
+    display_names = {
+        "analytical": "Analytical reference",
+        "offline PINN": "Offline PINN",
+        "adaptive PINN": "Sensor-adaptive PINN",
+        "streamed PINO": "Streamed PINO",
+    }
     for ax, (label, field) in zip(axes.flat, predictions.items()):
         for index in indices:
             ax.plot(
-                arrays["x_hat"],
+                arrays["x_hat"] * WALL_THICKNESS_MM,
                 field[index],
                 color=cmap(norm(tau[index])),
                 linewidth=1.8,
             )
-        ax.set_title(label)
+        ax.set_title(display_names[label])
         ax.grid(alpha=0.22)
     for ax in axes[-1]:
-        ax.set_xlabel("x/L")
+        ax.set_xlabel(r"Wall coordinate, $x$ (mm)")
     for ax in axes[:, 0]:
-        ax.set_ylabel("Temperature (K)")
+        ax.set_ylabel(r"Temperature, $T$ (K)")
     scalar = plt.cm.ScalarMappable(norm=norm, cmap=cmap)
     colorbar = fig.colorbar(
         scalar, ax=axes.ravel().tolist(), location="right", shrink=0.90, pad=0.02
     )
-    colorbar.set_label("tau (dashed marker = boundary break)" if switch_time is not None else "tau")
+    colorbar.set_label(r"Dimensionless time, $\tau$" +
+                       (" (dashed line: heat-flux step)" if switch_time is not None else ""))
     if switch_time is not None:
         colorbar.ax.axhline(
             switch_time * 100.0,
@@ -207,7 +235,7 @@ def _gradient_temperature_plot(
             linestyle="--",
             linewidth=2,
         )
-    fig.suptitle(title)
+    fig.suptitle(title, fontsize=13)
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
@@ -221,11 +249,7 @@ def _rmse_plot(
     logarithmic: bool = True,
 ):
     fig, ax = plt.subplots(figsize=(9.2, 5.4), layout="constrained")
-    colors = {
-        "offline PINN": "tab:orange",
-        "adaptive PINN": "tab:blue",
-        "streamed PINO": "tab:green",
-    }
+    colors = MODEL_COLORS
     tau = arrays["times"] * 100.0
     for label, field in predictions.items():
         error = _rmse_by_time(arrays["truth"], field)
@@ -275,16 +299,65 @@ def _dual_rmse_plot(
                 switch_time * 100.0,
                 color="black",
                 linestyle="--",
-                label=f"boundary break at tau={switch_time * 100.0:.1f}",
+                label=rf"heat-flux step, $\tau_s={switch_time * 100.0:.0f}$",
             )
         ax.set(
             title="Logarithmic detail" if logarithmic else "Linear overview",
-            xlabel="tau",
-            ylabel="Whole-wall RMSE vs analytical (K)",
+            xlabel=r"Dimensionless time, $\tau$",
+            ylabel=r"Spatial RMSE relative to analytical solution (K)",
         )
         ax.grid(alpha=0.25, which="both")
     axes[0].legend(loc="best", frameon=True)
-    fig.suptitle(title)
+    fig.suptitle(title, fontsize=13)
+    fig.savefig(path, dpi=200)
+    plt.close(fig)
+
+
+def _error_field_plot(
+    path: Path,
+    title: str,
+    arrays: dict,
+    predictions: dict[str, np.ndarray],
+    switch_time: float | None,
+):
+    """Compare absolute error fields and pairwise error reductions."""
+    truth = arrays["truth"]
+    errors = {label: np.abs(field - truth) for label, field in predictions.items()}
+    positive = np.concatenate([field[field > 0] for field in errors.values()])
+    lower = max(float(np.percentile(positive, 1)), 1e-4)
+    upper = float(max(np.max(field) for field in errors.values()))
+    differences = [
+        ("Offline minus adaptive", errors["offline PINN"] - errors["adaptive PINN"]),
+        ("Offline minus PINO", errors["offline PINN"] - errors["streamed PINO"]),
+        ("Adaptive minus PINO", errors["adaptive PINN"] - errors["streamed PINO"]),
+    ]
+    limit = max(float(np.max(np.abs(field))) for _, field in differences)
+    fig, axes = plt.subplots(2, 3, figsize=(15.2, 9.0), sharex=True, sharey=True,
+                             layout="constrained")
+    extent = (0.0, WALL_THICKNESS_MM, 0.0, 100.0)
+    top_titles = ("Offline PINN", "Sensor-adaptive PINN", "Streamed PINO")
+    top_image = None
+    for ax, (label, field), panel_title in zip(axes[0], errors.items(), top_titles):
+        top_image = ax.imshow(field, origin="lower", aspect="auto", extent=extent,
+                              cmap="magma", norm=LogNorm(vmin=lower, vmax=upper))
+        ax.set_title(panel_title + " absolute error")
+    bottom_image = None
+    norm = TwoSlopeNorm(vmin=-limit, vcenter=0.0, vmax=limit)
+    for ax, (panel_title, field) in zip(axes[1], differences):
+        bottom_image = ax.imshow(field, origin="lower", aspect="auto", extent=extent,
+                                 cmap="BrBG", norm=norm)
+        ax.set_title(panel_title + " error")
+        ax.set_xlabel(r"Wall coordinate, $x$ (mm)")
+    for ax in axes[:, 0]:
+        ax.set_ylabel(r"Dimensionless time, $\tau$")
+    if switch_time is not None:
+        for ax in axes.flat:
+            ax.axhline(switch_time * 100.0, color="cyan", linestyle="--", linewidth=1.3)
+    cb_top = fig.colorbar(top_image, ax=axes[0], pad=0.012)
+    cb_top.set_label("Absolute temperature error (K; log scale)")
+    cb_bottom = fig.colorbar(bottom_image, ax=axes[1], pad=0.012)
+    cb_bottom.set_label("Error reduction (K)\nPositive values favor the second model")
+    fig.suptitle(title, fontsize=13)
     fig.savefig(path, dpi=200)
     plt.close(fig)
 
@@ -330,18 +403,19 @@ def evaluate_case(
     pino_prediction = pino_predict(pino, pino_arrays, cfg, device)[0]
     switch_time = specification["switch_time_s"]
     condition = (
-        f"q={specification['q_before_w_m2']/1e6:.3f} MW/m², no break"
+        f"constant heat flux, q″ = {specification['q_before_w_m2']/1e6:.3f} MW m⁻²"
         if switch_time is None
         else (
-            f"q={specification['q_before_w_m2']/1e6:.3f}→"
-            f"{specification['q_after_w_m2']/1e6:.3f} MW/m² at "
-            f"tau={switch_time*100.0:.1f}"
+            f"heat-flux step, q″: {specification['q_before_w_m2']/1e6:.3f} → "
+            f"{specification['q_after_w_m2']/1e6:.3f} MW m⁻² at "
+            f"τₛ = {switch_time*100.0:.1f}"
         )
     )
     analytical = arrays["truth"]
-    _temperature_plot(
+    _temperature_field_plot(
         case_dir / "01_adaptive_offline_analytical_temperature.png",
-        f"Adaptive vs offline vs analytical: {condition}",
+        "Space-time temperature fields for the analytical reference and PINNs\n"
+        f"Boundary condition: {condition}",
         arrays,
         {
             "analytical": analytical,
@@ -352,14 +426,16 @@ def evaluate_case(
     )
     _dual_rmse_plot(
         case_dir / "02_adaptive_offline_rmse.png",
-        f"Adaptive and offline errors: {condition}",
+        "Temporal error of the offline and sensor-adaptive PINNs\n"
+        f"Boundary condition: {condition}",
         arrays,
         {"offline PINN": offline_prediction, "adaptive PINN": adaptive.prediction},
         switch_time,
     )
     _gradient_temperature_plot(
         case_dir / "03_all_models_temperature.png",
-        f"Temperature evolution by model: {condition}",
+        "Wall-temperature evolution across the analytical and learned models\n"
+        f"Boundary condition: {condition}",
         arrays,
         {
             "analytical": analytical,
@@ -371,7 +447,20 @@ def evaluate_case(
     )
     _dual_rmse_plot(
         case_dir / "04_all_models_rmse.png",
-        f"All model errors: {condition}",
+        "Temporal error of the offline PINN, sensor-adaptive PINN, and streamed PINO\n"
+        f"Boundary condition: {condition}",
+        arrays,
+        {
+            "offline PINN": offline_prediction,
+            "adaptive PINN": adaptive.prediction,
+            "streamed PINO": pino_prediction,
+        },
+        switch_time,
+    )
+    _error_field_plot(
+        case_dir / "05_all_models_error_fields.png",
+        "Space-time temperature-error fields relative to the analytical solution\n"
+        f"Boundary condition: {condition}",
         arrays,
         {
             "offline PINN": offline_prediction,
@@ -408,7 +497,7 @@ def evaluate_case(
 def regenerate_saved_comparison_plots(
     case_dir: Path, condition: str, switch_time: float | None
 ) -> None:
-    """Rebuild Graphs 02–04 from saved arrays without running any model."""
+    """Rebuild all comparison figures from saved arrays without running a model."""
     saved = np.load(case_dir / "predictions.npz")
     arrays = {
         "times": saved["tau"] / 100.0,
@@ -418,16 +507,26 @@ def regenerate_saved_comparison_plots(
     offline = saved["offline_pinn_temperature_k"]
     adaptive = saved["adaptive_pinn_temperature_k"]
     pino = saved["streamed_pino_temperature_k"]
+    _temperature_field_plot(
+        case_dir / "01_adaptive_offline_analytical_temperature.png",
+        "Space-time temperature fields for the analytical reference and PINNs\n"
+        f"Boundary condition: {condition}",
+        arrays,
+        {"analytical": arrays["truth"], "offline PINN": offline, "adaptive PINN": adaptive},
+        switch_time,
+    )
     _dual_rmse_plot(
         case_dir / "02_adaptive_offline_rmse.png",
-        f"Adaptive and offline errors: {condition}",
+        "Temporal error of the offline and sensor-adaptive PINNs\n"
+        f"Boundary condition: {condition}",
         arrays,
         {"offline PINN": offline, "adaptive PINN": adaptive},
         switch_time,
     )
     _gradient_temperature_plot(
         case_dir / "03_all_models_temperature.png",
-        f"Temperature evolution by model: {condition}",
+        "Wall-temperature evolution across the analytical and learned models\n"
+        f"Boundary condition: {condition}",
         arrays,
         {
             "analytical": arrays["truth"],
@@ -444,7 +543,16 @@ def regenerate_saved_comparison_plots(
     }
     _dual_rmse_plot(
         case_dir / "04_all_models_rmse.png",
-        f"All model errors: {condition}",
+        "Temporal error of the offline PINN, sensor-adaptive PINN, and streamed PINO\n"
+        f"Boundary condition: {condition}",
+        arrays,
+        all_models,
+        switch_time,
+    )
+    _error_field_plot(
+        case_dir / "05_all_models_error_fields.png",
+        "Space-time temperature-error fields relative to the analytical solution\n"
+        f"Boundary condition: {condition}",
         arrays,
         all_models,
         switch_time,

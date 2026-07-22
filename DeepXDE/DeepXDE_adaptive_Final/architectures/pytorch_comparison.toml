@@ -1,0 +1,27 @@
+[profile]
+name = "pytorch_comparison"
+description = "Matches the standalone PyTorch PINN's network and training choices within the 2D DeepXDE problem."
+
+[network]
+hidden_layers = [48, 48, 48]
+activation = "tanh"
+initializer = "Glorot uniform"
+
+[training]
+baseline_iterations = 1200
+adaptive_iterations_per_batch = 160
+baseline_learning_rate = 2.0e-3
+adaptive_learning_rate = 5.0e-4
+pde_loss_weight = 1.0
+boundary_loss_weight = 2.0
+initial_loss_weight = 5.0
+data_loss_weight = 10.0
+num_domain = 1536
+num_boundary = 256
+num_initial = 256
+
+[streaming]
+sample_spacing_tau = 2.5
+batch_size_n = 9
+sensor_x = [0.05, 0.25, 0.5, 0.75]
+sensor_y = [0.5]

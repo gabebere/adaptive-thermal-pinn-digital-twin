@@ -1,0 +1,172 @@
+{
+  "study": "five-seed training-stability benchmark",
+  "seeds": [
+    7,
+    11,
+    19,
+    23,
+    31
+  ],
+  "controlled_data_seed": 8128,
+  "corpus_manifest_sha256": "ad103141b308e072444087f66ed0064a4c0014ad6cdca78db659d9892de33383",
+  "architecture": "C:\\Users\\jblec\\Technion\\Spring_2026\\Machine Learning\\Project\\adaptive-thermal-pinn-digital-twin\\DeepXDE\\DeepXDE_adaptive_Final\\architectures\\constant_flux_balanced.toml",
+  "statistics": {
+    "offline_pinn": {
+      "overall_rmse_k": {
+        "mean": 19.501860046386717,
+        "sample_std": 1.44143021629903,
+        "median": 19.292970657348633,
+        "minimum": 17.554479598999023,
+        "maximum": 21.271263122558594,
+        "coefficient_of_variation": 0.07391244798549852
+      },
+      "pre_switch_rmse_k": {
+        "mean": 13.360691452026368,
+        "sample_std": 2.2979063175954155,
+        "median": 12.907931327819824,
+        "minimum": 10.851140022277832,
+        "maximum": 17.054561614990234,
+        "coefficient_of_variation": 0.17199007445433526
+      },
+      "post_switch_rmse_k": {
+        "mean": 23.877239608764647,
+        "sample_std": 1.4257785298353367,
+        "median": 24.088592529296875,
+        "minimum": 22.124757766723633,
+        "maximum": 25.71310043334961,
+        "coefficient_of_variation": 0.05971287105197765
+      },
+      "maximum_time_rmse_k": {
+        "mean": 32.23741455078125,
+        "sample_std": 1.1084941803081063,
+        "median": 32.42808151245117,
+        "minimum": 30.796146392822266,
+        "maximum": 33.27803039550781,
+        "coefficient_of_variation": 0.03438533132246
+      }
+    },
+    "adaptive_pinn": {
+      "overall_rmse_k": {
+        "mean": 2.2084340379189875,
+        "sample_std": 0.37513659825831774,
+        "median": 2.0572403784303397,
+        "minimum": 1.9208363452987827,
+        "maximum": 2.825116300832518,
+        "coefficient_of_variation": 0.16986543035345072
+      },
+      "pre_switch_rmse_k": {
+        "mean": 3.127362103248571,
+        "sample_std": 0.5408480773515408,
+        "median": 2.9075188334251365,
+        "minimum": 2.7113323884946325,
+        "maximum": 4.015759544673731,
+        "coefficient_of_variation": 0.1729406635674618
+      },
+      "post_switch_rmse_k": {
+        "mean": 0.4518764561587605,
+        "sample_std": 0.015618359982461968,
+        "median": 0.4497425964478096,
+        "minimum": 0.43284940381601933,
+        "maximum": 0.47339061841401936,
+        "coefficient_of_variation": 0.03456334086362463
+      },
+      "maximum_time_rmse_k": {
+        "mean": 8.207182506481853,
+        "sample_std": 1.728586774761193,
+        "median": 7.484269091197926,
+        "minimum": 6.967594480010506,
+        "maximum": 11.105666808348385,
+        "coefficient_of_variation": 0.21061878097580905
+      }
+    },
+    "streamed_pino": {
+      "overall_rmse_k": {
+        "mean": 0.23270373344421386,
+        "sample_std": 0.0060416419019809495,
+        "median": 0.23402465879917145,
+        "minimum": 0.22245125472545624,
+        "maximum": 0.23800326883792877,
+        "coefficient_of_variation": 0.025962806064859782
+      },
+      "pre_switch_rmse_k": {
+        "mean": 0.22841873168945312,
+        "sample_std": 0.004434114548979105,
+        "median": 0.22696161270141602,
+        "minimum": 0.22398224472999573,
+        "maximum": 0.23574501276016235,
+        "coefficient_of_variation": 0.019412219462839452
+      },
+      "post_switch_rmse_k": {
+        "mean": 0.23638536036014557,
+        "sample_std": 0.01568571375187983,
+        "median": 0.24132287502288818,
+        "minimum": 0.2090059071779251,
+        "maximum": 0.2480626255273819,
+        "coefficient_of_variation": 0.06635653632687666
+      },
+      "maximum_time_rmse_k": {
+        "mean": 0.9239500641822815,
+        "sample_std": 0.05728341917290101,
+        "median": 0.9349640011787415,
+        "minimum": 0.8446640372276306,
+        "maximum": 0.9860775470733643,
+        "coefficient_of_variation": 0.061998392979817844
+      }
+    }
+  },
+  "pino_generalization_statistics": {
+    "locked_rmse_k": {
+      "mean": 0.23270373344421386,
+      "sample_std": 0.0060416419019809495,
+      "median": 0.23402465879917145,
+      "minimum": 0.22245125472545624,
+      "maximum": 0.23800326883792877,
+      "coefficient_of_variation": 0.025962806064859782
+    },
+    "interpolation_mean_rmse_k": {
+      "mean": 0.24946505725383758,
+      "sample_std": 0.006097785825821634,
+      "median": 0.24716228246688843,
+      "minimum": 0.24436737596988678,
+      "maximum": 0.2592500150203705,
+      "coefficient_of_variation": 0.024443446681259928
+    },
+    "validation_rmse_k": {
+      "mean": 0.253907310962677,
+      "sample_std": 0.005586062075291242,
+      "median": 0.2528584599494934,
+      "minimum": 0.24838411808013916,
+      "maximum": 0.26330575346946716,
+      "coefficient_of_variation": 0.02200039870499185
+    },
+    "median_latency_ms": {
+      "mean": 0.8616400067694485,
+      "sample_std": 0.08515366651682198,
+      "median": 0.8535000088158995,
+      "minimum": 0.747500016586855,
+      "maximum": 0.9854999952949584,
+      "coefficient_of_variation": 0.09882742891209181
+    },
+    "best_epoch": {
+      "mean": 396.0,
+      "sample_std": 74.02702209328699,
+      "median": 420.0,
+      "minimum": 300.0,
+      "maximum": 480.0,
+      "coefficient_of_variation": 0.18693692447799745
+    }
+  },
+  "adaptive_latency_statistics_ms": {
+    "mean": 2464.859079994494,
+    "sample_std": 151.76431642166875,
+    "median": 2478.8759000075515,
+    "minimum": 2281.1665999761317,
+    "maximum": 2678.2731999992393,
+    "coefficient_of_variation": 0.06157119392886662
+  },
+  "mean_rmse_improvement_factors": {
+    "adaptive_over_offline": 8.830628269415447,
+    "pino_over_adaptive": 9.490324908983105,
+    "pino_over_offline": 83.80553142720379
+  }
+}

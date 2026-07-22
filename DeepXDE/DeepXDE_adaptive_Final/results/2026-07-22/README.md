@@ -19,7 +19,8 @@ each case.
 ## Graphs
 
 The `graphs/` folder contains 22 combined full-resolution figures plus 34
-standalone panels:
+standalone panels. The separate `multiseed_study/` folder adds three
+training-stability figures and the supporting seedwise metrics:
 
 - `01_original_constant_flux/`: the first constant-flux analytical, offline,
   adaptive, and streamed-PINO comparison;

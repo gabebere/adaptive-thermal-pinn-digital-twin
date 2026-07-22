@@ -170,6 +170,7 @@ def _rmse_plot(
     arrays: dict,
     predictions: dict[str, np.ndarray],
     switch_time: float | None,
+    logarithmic: bool = True,
 ):
     fig, ax = plt.subplots(figsize=(9.2, 5.4), layout="constrained")
     colors = {
@@ -180,7 +181,8 @@ def _rmse_plot(
     tau = arrays["times"] * 100.0
     for label, field in predictions.items():
         error = _rmse_by_time(arrays["truth"], field)
-        ax.semilogy(tau[1:], error[1:], label=label, color=colors[label], linewidth=2)
+        plot = ax.semilogy if logarithmic else ax.plot
+        plot(tau[1:], error[1:], label=label, color=colors[label], linewidth=2)
     if switch_time is not None:
         ax.axvline(
             switch_time * 100.0,
@@ -188,7 +190,12 @@ def _rmse_plot(
             linestyle="--",
             label=f"boundary break at tau={switch_time * 100.0:.1f}",
         )
-    ax.set(title=title, xlabel="tau", ylabel="Whole-wall RMSE vs analytical (K)")
+    axis_description = "logarithmic" if logarithmic else "linear"
+    ax.set(
+        title=title,
+        xlabel="tau",
+        ylabel=f"Whole-wall RMSE vs analytical (K, {axis_description} axis)",
+    )
     ax.grid(alpha=0.25, which="both")
     ax.legend()
     fig.savefig(path, dpi=200)
@@ -285,6 +292,7 @@ def evaluate_case(
             "streamed PINO": pino_prediction,
         },
         switch_time,
+        logarithmic=False,
     )
     np.savez_compressed(
         case_dir / "predictions.npz",

@@ -29,6 +29,9 @@ The `graphs/` folder contains 20 full-resolution figures:
 - `03_new_cases/random_break/`: four temperature/RMSE plots for the unseen
   4.302→5.189 MW/m² case with a random break at tau=53.
 
+For both new cases, Graph 04 uses a linear RMSE axis; Graph 02 retains the
+logarithmic axis for resolving the smaller adaptive-PINN errors.
+
 ## Headline RMSE
 
 | Case | Offline PINN | Adaptive PINN | Streamed PINO |

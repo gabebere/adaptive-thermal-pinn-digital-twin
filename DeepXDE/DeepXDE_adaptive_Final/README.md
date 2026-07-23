@@ -10,26 +10,26 @@ in `architectures/` supplies a different set of replaceable design choices.
 From this folder, using the repository virtual environment:
 
 ```powershell
-..\..\.venv\Scripts\python.exe run.py balanced --profile full
+..\..\..\.venv\Scripts\python.exe run.py balanced --profile full
 ```
 
 Quick wiring check (reduced iterations and collocation points):
 
 ```powershell
-..\..\.venv\Scripts\python.exe run.py balanced --profile smoke
+..\..\..\.venv\Scripts\python.exe run.py balanced --profile smoke
 ```
 
 Other maintained choices:
 
 ```powershell
-..\..\.venv\Scripts\python.exe run.py low_latency --profile full
-..\..\.venv\Scripts\python.exe run.py pytorch_comparison --profile full
+..\..\..\.venv\Scripts\python.exe run.py low_latency --profile full
+..\..\..\.venv\Scripts\python.exe run.py pytorch_comparison --profile full
 ```
 
 You may also supply a file path:
 
 ```powershell
-..\..\.venv\Scripts\python.exe run.py architectures\my_experiment.toml --profile full
+..\..\..\.venv\Scripts\python.exe run.py architectures\my_experiment.toml --profile full
 ```
 
 Outputs are written below `outputs/` unless `--output-dir` is supplied. Every
@@ -76,7 +76,7 @@ the validated 2D workflow, but use a separate architecture document so their
 training budgets cannot overwrite one another:
 
 ```powershell
-..\..\.venv\Scripts\python.exe run_constant_flux.py constant_flux_balanced --profile full
+..\..\..\.venv\Scripts\python.exe run_constant_flux.py constant_flux_balanced --profile full
 ```
 
 `architectures/constant_flux_balanced.toml` defines the offline and adaptive
@@ -88,3 +88,16 @@ report-quality figures, checkpoints, metrics, and held-out cases remain under
 In short, `run.py balanced` runs the configurable validated 2D PINN, while
 `run_constant_flux.py constant_flux_balanced` runs the physical constant-flux
 PINN/PINO comparison. Both entry points load TOML architecture files.
+
+## Multi-seed robustness study
+
+The production-length five-seed benchmark is run with:
+
+```powershell
+..\..\..\.conda\python.exe core\run_multiseed_study.py --seeds 7 11 19 23 31 --skip-existing
+```
+
+It keeps the analytical corpus and held-out cases fixed while changing only
+training randomness. Versioned aggregate results are under
+`results/2026-07-22/multiseed_study/`; large per-seed checkpoints remain in the
+ignored `outputs/multiseed_study/` directory.

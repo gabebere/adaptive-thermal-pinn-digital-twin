@@ -1,0 +1,27 @@
+\documentclass[10pt]{article}
+\usepackage[letterpaper,margin=0.5in]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage{newtxtext,newtxmath}
+\usepackage{microtype}
+\usepackage{cite}
+\usepackage[hidelinks]{hyperref}
+\setlength{\parindent}{1em}
+\setlength{\parskip}{0pt}
+\pagestyle{empty}
+
+\begin{document}
+\paragraph{Literature-Based Analytical Reference.}
+To establish an independent reference solution, we reproduced the two-dimensional transient heat-conduction study of Hsu, Tu, and Chang~\cite{Hsu2023}, which considers a rectangular domain with space- and time-dependent Dirichlet boundary conditions. Their solution divides the temperature field into two one-dimensional subsystems by superposition, uses shifting functions to homogenize the boundary conditions, and evaluates the resulting sine-eigenfunction series. We recreated this analytical numerical model for the paper's parabolic-boundary example and first ran the 20-term expansion at the eight time instances reported in Table~1. Comparing the recreated center temperatures with the published values produced only small differences consistent with the rounding precision of the table, thereby validating the implementation. Because the series gives temperature directly for any selected dimensionless time $\tau$, increasing the temporal resolution requires only replacing the original time vector with 100 uniformly spaced values and evaluating the same validated expression at each value; no retraining or new time-marching scheme is required. This produced a denser 100-instance reference dataset for subsequent model development. In the attached project archive, the code is located at \texttt{Literature\_results/mdpi\_416\_series.py}, and the recreated and extended results are stored under \texttt{Literature\_results/mdpi\_416\_tables/} and \texttt{Literature\_results/expanded\_analytical\_results/}.
+
+\begin{figure}[h]
+  \centering
+  \fbox{\parbox[c][1.25in][c]{0.78\textwidth}{\centering\textit{Insert Table~1 validation-error figure here}}}
+  \caption{Error between the recreated 20-term solution and the published Table~1 values.}
+  \label{fig:table1error}
+\end{figure}
+
+\begin{thebibliography}{1}
+\bibitem{Hsu2023}
+H.-P. Hsu, T.-W. Tu, and J.-R. Chang, ``An Analytic Solution for 2D Heat Conduction Problems with General Dirichlet Boundary Conditions,'' \emph{Axioms}, Vol.~12, No.~5, Article 416, 2023. \url{https://doi.org/10.3390/axioms12050416}.
+\end{thebibliography}
+\end{document}

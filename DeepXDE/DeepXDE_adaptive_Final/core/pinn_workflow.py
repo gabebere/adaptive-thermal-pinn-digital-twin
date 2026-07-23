@@ -15,7 +15,7 @@ from parameters import (
     BoundarySet,
     WorkflowConfig,
     boundary_spatial_profile,
-    initial_condition,
+    initial_condition_for_boundaries,
 )
 
 
@@ -42,6 +42,36 @@ def physics_loss_weights(cfg: WorkflowConfig) -> list[float]:
         cfg.pde_loss_weight,
         *([cfg.boundary_loss_weight] * 4),
         cfg.initial_loss_weight,
+    ]
+
+
+def training_callbacks(cfg: WorkflowConfig) -> list:
+    """Construct per-training-call callbacks selected by an architecture file."""
+    if cfg.resample_period is None:
+        return []
+    return [
+        dde.callbacks.PDEPointResampler(
+            period=cfg.resample_period,
+            pde_points=cfg.resample_pde_points,
+            bc_points=cfg.resample_bc_points,
+        )
+    ]
+
+
+def make_time_batches(times: np.ndarray, cfg: WorkflowConfig) -> list[np.ndarray]:
+    """Apply the architecture's streaming-window policy."""
+    online_times = np.asarray(times)
+    if cfg.exclude_initial_sensor_time:
+        online_times = online_times[~np.isclose(online_times, 0.0)]
+    if len(online_times) == 0:
+        raise ValueError("streaming policy excluded every sensor time")
+    if cfg.adaptive_windows is not None:
+        if cfg.adaptive_windows > len(online_times):
+            raise ValueError("adaptive_windows cannot exceed available sensor times")
+        return list(np.array_split(online_times, cfg.adaptive_windows))
+    return [
+        online_times[start : start + cfg.batch_size_n]
+        for start in range(0, len(online_times), cfg.batch_size_n)
     ]
 
 
@@ -114,7 +144,9 @@ def make_problem(
         dde.icbc.DirichletBC(geometry_time, side_function(0, 3), top),
         dde.icbc.IC(
             geometry_time,
-            lambda X: initial_condition(X[:, 0:1], X[:, 1:2]),
+            lambda X: initial_condition_for_boundaries(
+                X[:, 0:1], X[:, 1:2], boundaries
+            ),
             lambda _, initial: initial,
         ),
     ]
@@ -133,7 +165,7 @@ def make_problem(
         num_domain=cfg.num_domain,
         num_boundary=cfg.num_boundary,
         num_initial=cfg.num_initial,
-        train_distribution="Hammersley",
+        train_distribution=cfg.train_distribution,
     )
 
 
@@ -194,6 +226,7 @@ def train_baseline(
         iterations=cfg.baseline_iterations,
         display_every=max(1, cfg.baseline_iterations // 5),
         verbose=verbose,
+        callbacks=training_callbacks(cfg),
     )
     field_prediction = predict(model, field_points, cfg)
     return BaselineResult(
@@ -230,10 +263,7 @@ def adapt_online(
         loss_weights=physics_loss_weights(cfg),
     )
 
-    time_batches = [
-        times[start : start + cfg.batch_size_n]
-        for start in range(0, len(times), cfg.batch_size_n)
-    ]
+    time_batches = make_time_batches(times, cfg)
     history = []
     revealed_batches: list[np.ndarray] = []
     causal_prior = np.full(len(times), np.nan)
@@ -285,6 +315,7 @@ def adapt_online(
             iterations=cfg.adaptive_iterations_per_batch,
             display_every=max(1, cfg.adaptive_iterations_per_batch),
             verbose=verbose,
+            callbacks=training_callbacks(cfg),
         )
         after = predict(model, sensor_points[new_mask], cfg)
         after_field = predict(model, field_points[new_field_mask], cfg)

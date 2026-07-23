@@ -99,28 +99,46 @@ def plot_streaming_map(cfg, reference, output_dir: Path):
     fig.colorbar(image, ax=ax, label=TEMPERATURE_LABEL + r" at $Y=0.5$")
     center_y_mask = np.isclose(reference.sensor_points[:, 1], 0.5)
     center_points = reference.sensor_points[center_y_mask]
-    batches = [
-        reference.times[start : start + cfg.batch_size_n]
-        for start in range(0, len(reference.times), cfg.batch_size_n)
-    ]
-    colors = plt.get_cmap("tab10")(np.linspace(0.0, 0.9, len(batches)))
+    online_times = reference.times
+    if cfg.exclude_initial_sensor_time:
+        online_times = online_times[~np.isclose(online_times, 0.0)]
+    if cfg.adaptive_windows is not None:
+        batches = list(np.array_split(online_times, cfg.adaptive_windows))
+    else:
+        batches = [
+            online_times[start : start + cfg.batch_size_n]
+            for start in range(0, len(online_times), cfg.batch_size_n)
+        ]
+    plotted_points = []
+    update_numbers = []
     for index, batch_times in enumerate(batches, start=1):
         mask = np.isin(np.round(center_points[:, 2], 12), np.round(batch_times, 12))
-        ax.scatter(
-            center_points[mask, 0],
-            center_points[mask, 2],
-            s=22,
-            color=colors[index - 1],
-            edgecolor="white",
-            linewidth=0.3,
-            label=f"batch {index}",
-        )
+        plotted_points.append(center_points[mask])
+        update_numbers.extend([index] * int(np.count_nonzero(mask)))
+    plotted_points = np.vstack(plotted_points)
+    scatter = ax.scatter(
+        plotted_points[:, 0], plotted_points[:, 2], c=update_numbers,
+        s=24, cmap="viridis", edgecolor="white", linewidth=0.3,
+    )
+    fig.colorbar(scatter, ax=ax, label="Sequential update number")
+    measurements_per_time = len(cfg.sensor_x) * len(cfg.sensor_y)
+    uniform_spacing = np.diff(reference.times)
+    spacing_label = (
+        f", uniform Δτ={uniform_spacing[0]:g}"
+        if len(uniform_spacing)
+        and np.allclose(uniform_spacing, uniform_spacing[0])
+        else ""
+    )
+    batch_description = (
+        f"{measurements_per_time} measurements/update{spacing_label}"
+        if cfg.batch_size_n == 1 and cfg.adaptive_windows is None
+        else f"{cfg.batch_size_n} times/update{spacing_label}"
+    )
     ax.set(
         xlabel=r"Sensor position $X$ along the center row ($Y=0.5$)",
         ylabel=TIME_LABEL,
-        title=f"Sensor observations supplied to each update (n={cfg.batch_size_n} times)",
+        title=f"Sensor stream: {batch_description}",
     )
-    ax.legend(ncol=3, fontsize=7, loc="upper right")
     fig.tight_layout()
     fig.savefig(output_dir / "04_streaming_numerical_inputs.png", dpi=180)
     plt.close(fig)
@@ -181,8 +199,11 @@ def plot_adaptive_comparison(cfg, reference, baseline, adaptive, output_dir: Pat
     for ax in axes:
         ax.set_xlabel(TIME_LABEL)
         ax.grid(alpha=0.25)
+    measurements = len(cfg.sensor_x) * len(cfg.sensor_y) * cfg.batch_size_n
     fig.suptitle(
-        f"Causal online adaptation with n={cfg.batch_size_n} time instances per update"
+        "Figure 05 — unchanged heating: each update fine-tunes the current "
+        f"network for {cfg.adaptive_iterations_per_batch} Adam steps using "
+        f"{measurements} newly revealed sensor measurements"
     )
     fig.tight_layout()
     fig.savefig(output_dir / "05_adaptive_pinn_error.png", dpi=180)
@@ -247,9 +268,10 @@ def plot_switch_test(cfg, switch_data, baseline_prediction, adaptive, output_dir
         ax.set_xlabel(TIME_LABEL)
         ax.grid(alpha=0.25)
     fig.suptitle(
-        f"Unknown boundary change: {cfg.boundary_set.name} to "
-        f"{cfg.changed_boundary_set.name} at tau={switch_data.switch_tau:g}; "
-        "each point uses the model state available at that time"
+        "Figure 06 — unannounced heating event: left-edge amplitude increases "
+        f"from {cfg.boundary_set.amplitudes[0]:g} to "
+        f"{cfg.changed_boundary_set.amplitudes[0]:g} at tau={switch_data.switch_tau:g}; "
+        f"each update is {cfg.adaptive_iterations_per_batch} Adam steps"
     )
     fig.tight_layout()
     fig.savefig(output_dir / "06_boundary_change_response.png", dpi=180)
@@ -261,7 +283,11 @@ def save_metrics(cfg, literature, baseline, adaptive, switch_baseline_rmse, swit
         "configuration": {
             "tau_final": cfg.tau_final,
             "time_instances": cfg.time_instances,
+            "time_distribution": cfg.time_distribution,
             "batch_size_n": cfg.batch_size_n,
+            "adaptive_windows": cfg.adaptive_windows,
+            "exclude_initial_sensor_time": cfg.exclude_initial_sensor_time,
+            "sensor_noise_std": cfg.sensor_noise_std,
             "sensor_count": len(cfg.sensor_x) * len(cfg.sensor_y),
             "sensor_x": cfg.sensor_x,
             "sensor_y": cfg.sensor_y,
@@ -280,6 +306,10 @@ def save_metrics(cfg, literature, baseline, adaptive, switch_baseline_rmse, swit
             "num_domain": cfg.num_domain,
             "num_boundary": cfg.num_boundary,
             "num_initial": cfg.num_initial,
+            "train_distribution": cfg.train_distribution,
+            "resample_period": cfg.resample_period,
+            "resample_pde_points": cfg.resample_pde_points,
+            "resample_bc_points": cfg.resample_bc_points,
             "boundary_set": cfg.boundary_set.name,
             "changed_boundary_set": cfg.changed_boundary_set.name,
             "switch_fraction": cfg.switch_fraction,

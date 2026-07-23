@@ -17,11 +17,18 @@ boundary_loss_weight = 2.0
 initial_loss_weight = 5.0
 data_loss_weight = 10.0
 num_domain = 1536
-num_boundary = 256
+num_boundary = 512
 num_initial = 256
+train_distribution = "pseudo"
+resample_period = 1
+resample_pde_points = true
+resample_bc_points = false
 
 [streaming]
 sample_spacing_tau = 2.5
-batch_size_n = 9
+batch_size_n = 8
+adaptive_windows = 5
+exclude_initial_sensor_time = true
+sensor_noise_std = 0.01
 sensor_x = [0.05, 0.25, 0.5, 0.75]
 sensor_y = [0.5]

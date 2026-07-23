@@ -46,11 +46,20 @@ def make_sensor_points(cfg: WorkflowConfig, times: np.ndarray) -> np.ndarray:
 
 def generate_reference_dataset(cfg: WorkflowConfig, output_dir: Path) -> ReferenceDataset:
     output_dir.mkdir(parents=True, exist_ok=True)
-    times = make_log_time_grid(cfg.tau_final, cfg.time_instances)
+    times = (
+        np.linspace(0.0, cfg.tau_final, cfg.time_instances)
+        if cfg.time_distribution == "linear"
+        else make_log_time_grid(cfg.tau_final, cfg.time_instances)
+    )
     field_points, x, y = make_field_points(cfg.field_nx, cfg.field_ny, times)
     field_values = temperature(field_points, cfg.boundary_set, cfg.series_terms)
     sensor_points = make_sensor_points(cfg, times)
     sensor_values = temperature(sensor_points, cfg.boundary_set, cfg.series_terms)
+    if cfg.sensor_noise_std > 0.0:
+        rng = np.random.default_rng(cfg.seed + 101)
+        sensor_values = sensor_values + rng.normal(
+            0.0, cfg.sensor_noise_std, size=sensor_values.shape
+        )
     dataset = ReferenceDataset(
         field_points, field_values, times, x, y, sensor_points, sensor_values
     )

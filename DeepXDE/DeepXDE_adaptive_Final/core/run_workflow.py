@@ -80,7 +80,12 @@ def main():
     )
     plot_offline_comparison(cfg, reference, baseline, output_dir)
 
-    print(f"[4/6] Assimilating analytical sensor data every n={cfg.batch_size_n} instances...")
+    streaming_label = (
+        f"in {cfg.adaptive_windows} explicit windows"
+        if cfg.adaptive_windows is not None
+        else f"every n={cfg.batch_size_n} instances"
+    )
+    print(f"[4/6] Assimilating analytical sensor data {streaming_label}...")
     adaptive = adapt_online(
         cfg,
         baseline.network_state,

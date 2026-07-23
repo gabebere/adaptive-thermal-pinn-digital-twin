@@ -18,8 +18,19 @@ def boundary_spatial_profile(coordinate):
 
 
 def initial_condition(x, y):
+    """Original paper initial field, retained for literature validation."""
     x, y = np.asarray(x), np.asarray(y)
     return boundary_spatial_profile(x) + boundary_spatial_profile(y)
+
+
+def initial_condition_for_boundaries(x, y, boundaries):
+    """Initial field compatible with the selected four Dirichlet edges."""
+    x, y = np.asarray(x), np.asarray(y)
+    a1, a2, a3, a4 = boundaries.amplitudes
+    return (
+        ((1.0 - x) * a1 + x * a2) * boundary_spatial_profile(y)
+        + ((1.0 - y) * a3 + y * a4) * boundary_spatial_profile(x)
+    )
 
 
 @dataclass(frozen=True)
@@ -37,6 +48,15 @@ PAPER_BOUNDARY_SETS = {
     "set_3": BoundarySet("set_3", (1.0, 2.0, 3.0, 4.0)),
 }
 
+CONTINUOUS_BOUNDARY_SETS = {
+    "continuous_left": BoundarySet(
+        "continuous_left", (0.0, 0.0, 0.0, 0.0), (1.0, 0.0, 0.0, 0.0)
+    ),
+    "continuous_left_high": BoundarySet(
+        "continuous_left_high", (0.0, 0.0, 0.0, 0.0), (1.5, 0.0, 0.0, 0.0)
+    ),
+}
+
 
 @dataclass
 class WorkflowConfig:
@@ -50,17 +70,23 @@ class WorkflowConfig:
     seed: int = 7
 
     # Analytical reference solution.
-    boundary_set: BoundarySet = field(default_factory=lambda: PAPER_BOUNDARY_SETS["set_1"])
+    boundary_set: BoundarySet = field(
+        default_factory=lambda: CONTINUOUS_BOUNDARY_SETS["continuous_left"]
+    )
     series_terms: int = 20
     tau_final: float = 100.0
     time_instances: int = 41
     field_nx: int = 17
     field_ny: int = 17
+    time_distribution: str = "log"
 
     # Sparse numerical values treated as experimental sensor input.
     sensor_x: tuple[float, ...] = (0.2, 0.5, 0.8)
     sensor_y: tuple[float, ...] = (0.2, 0.5, 0.8)
     batch_size_n: int = 5
+    adaptive_windows: int | None = None
+    exclude_initial_sensor_time: bool = False
+    sensor_noise_std: float = 0.0
     # None retains every observation.  An integer keeps only that many recent
     # batches in the data-loss term, which lets the PINN forget stale pre-event
     # data more quickly after an unknown boundary change.
@@ -81,11 +107,15 @@ class WorkflowConfig:
     num_domain: int = 1800
     num_boundary: int = 400
     num_initial: int = 300
+    train_distribution: str = "Hammersley"
+    resample_period: int | None = None
+    resample_pde_points: bool = True
+    resample_bc_points: bool = False
 
     # Boundary-change experiment. The change occurs halfway through the total
     # time instances, not halfway through one n-point update batch.
     changed_boundary_set: BoundarySet = field(
-        default_factory=lambda: PAPER_BOUNDARY_SETS["set_2"]
+        default_factory=lambda: CONTINUOUS_BOUNDARY_SETS["continuous_left_high"]
     )
     switch_fraction: float = 0.5
     reset_boundary_clock_at_switch: bool = True
@@ -94,6 +124,16 @@ class WorkflowConfig:
     def validate(self) -> None:
         if self.batch_size_n < 1:
             raise ValueError("batch_size_n must be positive")
+        if self.adaptive_windows is not None and self.adaptive_windows < 1:
+            raise ValueError("adaptive_windows must be positive or None")
+        if self.sensor_noise_std < 0.0:
+            raise ValueError("sensor_noise_std must be nonnegative")
+        if self.resample_period is not None and self.resample_period < 1:
+            raise ValueError("resample_period must be positive or None")
+        if self.train_distribution not in {
+            "uniform", "pseudo", "LHS", "Halton", "Hammersley", "Sobol"
+        }:
+            raise ValueError("unsupported train_distribution")
         if (
             self.observation_window_batches is not None
             and self.observation_window_batches < 1
@@ -101,6 +141,8 @@ class WorkflowConfig:
             raise ValueError("observation_window_batches must be positive or None")
         if self.time_instances < 3:
             raise ValueError("time_instances must be at least 3")
+        if self.time_distribution not in {"linear", "log"}:
+            raise ValueError("time_distribution must be 'linear' or 'log'")
         if not 0.0 < self.switch_fraction < 1.0:
             raise ValueError("switch_fraction must lie strictly between 0 and 1")
         for locations in (self.sensor_x, self.sensor_y):
@@ -262,10 +304,18 @@ _ARCHITECTURE_FIELDS = {
         "num_domain",
         "num_boundary",
         "num_initial",
+        "train_distribution",
+        "resample_period",
+        "resample_pde_points",
+        "resample_bc_points",
     },
     "streaming": {
         "sample_spacing_tau",
+        "time_distribution",
         "batch_size_n",
+        "adaptive_windows",
+        "exclude_initial_sensor_time",
+        "sensor_noise_std",
         "sensor_x",
         "sensor_y",
         "observation_window_batches",

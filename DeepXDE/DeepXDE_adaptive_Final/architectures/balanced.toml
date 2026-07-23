@@ -22,7 +22,8 @@ num_initial = 300
 
 [streaming]
 sample_spacing_tau = 2.5
-batch_size_n = 2
+time_distribution = "linear"
+batch_size_n = 1
 sensor_x = [0.05, 0.5, 0.95]
-sensor_y = [0.05, 0.5, 0.95]
+sensor_y = [0.5]
 observation_window_batches = 2

@@ -71,6 +71,11 @@ def generate_switch_dataset(cfg: WorkflowConfig) -> SwitchDataset:
     )
     field_values = switched_temperature(field_points, **evaluation)
     sensor_values = switched_temperature(sensor_points, **evaluation)
+    if cfg.sensor_noise_std > 0.0:
+        rng = np.random.default_rng(cfg.seed + 101)
+        sensor_values = sensor_values + rng.normal(
+            0.0, cfg.sensor_noise_std, size=sensor_values.shape
+        )
     return SwitchDataset(
         field_points=field_points,
         field_values=field_values,

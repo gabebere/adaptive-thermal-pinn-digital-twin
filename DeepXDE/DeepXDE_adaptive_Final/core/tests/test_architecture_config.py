@@ -15,8 +15,10 @@ def test_balanced_architecture_document_matches_maintained_configuration():
     cfg = load_architecture_file(make_config("full"), ARCHITECTURES / "balanced.toml")
 
     assert cfg.time_instances == 41
-    assert cfg.batch_size_n == 2
+    assert cfg.batch_size_n == 1
+    assert cfg.time_distribution == "linear"
     assert cfg.sensor_x == (0.05, 0.5, 0.95)
+    assert cfg.sensor_y == (0.5,)
     assert cfg.observation_window_batches == 2
     assert cfg.adaptive_iterations_per_batch == 100
     assert cfg.initializer == "Glorot normal"
@@ -37,6 +39,14 @@ def test_pytorch_comparison_document_matches_source_model_choices():
     assert cfg.pde_loss_weight == 1.0
     assert cfg.boundary_loss_weight == 2.0
     assert cfg.initial_loss_weight == 5.0
+    assert cfg.num_boundary == 512
+    assert cfg.train_distribution == "pseudo"
+    assert cfg.resample_period == 1
+    assert cfg.resample_pde_points is True
+    assert cfg.resample_bc_points is False
+    assert cfg.adaptive_windows == 5
+    assert cfg.exclude_initial_sensor_time is True
+    assert cfg.sensor_noise_std == 0.01
     assert cfg.sensor_x == (0.05, 0.25, 0.5, 0.75)
     assert cfg.sensor_y == (0.5,)
     assert cfg.observation_window_batches is None
